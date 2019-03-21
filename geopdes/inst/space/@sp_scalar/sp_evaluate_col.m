@@ -11,12 +11,13 @@
 %              or points for visualization (see msh_cartesian/msh_evaluate_col)
 %   'option', value: additional optional parameters, currently available options are:
 %            
-%              Name     |   Default value |  Meaning
-%           ------------+-----------------+----------------------------------
-%            value      |      true       |  compute shape_functions
-%            gradient   |      false      |  compute shape_function_gradients
-%            hessian    |      false      |  compute shape_function_hessians
-%            laplacian  |      false      |  compute shape_function_laplacians
+%              Name       |   Default value |  Meaning
+%           --------------+-----------------+---------------------------------------
+%            value        |      true       |  compute shape_functions
+%            gradient     |      false      |  compute shape_function_gradients
+%            hessian      |      false      |  compute shape_function_hessians
+%            laplacian    |      false      |  compute shape_function_laplacians
+%            element_mask |      all        |  list of elements which are assembled
 %
 % OUTPUT:
 %
@@ -60,6 +61,7 @@ value = true;
 gradient = false;
 hessian = false;
 laplacian = false;
+element_mask_enabled = false;
 
 if (~isempty (varargin))
   if (~rem (length (varargin), 2) == 0)
@@ -74,6 +76,9 @@ if (~isempty (varargin))
       hessian = varargin {ii+1};
     elseif (strcmpi (varargin {ii}, 'laplacian'))
       laplacian = varargin {ii+1};
+    elseif (strcmpi (varargin {ii}, 'element_mask'))
+      element_mask_enabled = true;
+      element_mask =  varargin {ii+1};
     else
       error ('sp_evaluate_col: unknown option %s', varargin {ii});
     end
@@ -84,7 +89,11 @@ hessian_param = hessian || laplacian;
 grad_param = gradient || hessian_param;
 value_param = value || grad_param;
 
-sp = sp_evaluate_col_param (space, msh, 'value', value_param, 'gradient', grad_param, 'hessian', hessian_param);
+if element_mask_enabled
+  sp = sp_evaluate_col_param (space, msh, 'value', value_param, 'gradient', grad_param, 'hessian', hessian_param, 'element_mask', element_mask);
+else
+  sp = sp_evaluate_col_param (space, msh, 'value', value_param, 'gradient', grad_param, 'hessian', hessian_param);
+end
 
 switch (lower (space.transform))
   case {'grad-preserving'}
