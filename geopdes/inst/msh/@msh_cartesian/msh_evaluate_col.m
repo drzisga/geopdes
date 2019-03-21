@@ -6,6 +6,11 @@
 %
 %    msh:    mesh object (see msh_cartesian)
 %    colnum: number of the "column", i.e., the element in the first parametric direction.
+%   'option', value: additional optional parameters, currently available options are:
+%            
+%              Name       |   Default value |  Meaning
+%           --------------+-----------------+---------------------------------------
+%            element_mask |      all        |  list of elements which are assembled
 %
 % OUTPUT:
 %
@@ -52,26 +57,50 @@
 
 function msh_col = msh_evaluate_col (msh, colnum, varargin)
 
+  element_mask_enabled = false;
+  
+  if (~isempty (varargin))
+    if (~rem (length (varargin), 2) == 0)
+      error ('msh_evaluate_col: options must be passed in the [option, value] format');
+    end
+    for ii=1:2:length(varargin)-1
+      if (strcmpi (varargin {ii}, 'element_mask'))
+        element_mask_enabled = true;
+        element_mask = varargin {ii+1};
+      else
+        error ('msh_evaluate_col: unknown option %s', varargin {ii});
+      end
+    end
+  end
+
   msh_col.ndim = msh.ndim;
   msh_col.rdim = msh.rdim;
 
   msh_col.colnum = colnum;
+  msh_col.nel_dir = msh.nel_dir;
+  msh_col.nel_dir(1) = 1;
 
   if (msh.ndim == 1)
     msh_col.elem_list = colnum;
   elseif (msh.ndim == 2)
     msh_col.elem_list = colnum + msh.nel_dir(1)*(0:msh.nel_dir(2)-1);
+    if element_mask_enabled
+      msh_col.elem_list = msh_col.elem_list(element_mask{1});
+      msh_col.nel_dir = [1, length(msh_col.elem_list)];
+    end
   elseif (msh.ndim == 3)
     indu = colnum * ones(msh.nel_dir(2), msh.nel_dir(3));
     indv = repmat ((1:msh.nel_dir(2))', 1, msh.nel_dir(3));
     indw = repmat ((1:msh.nel_dir(3)), msh.nel_dir(2), 1);
     elem_list = sub2ind ([msh.nel_dir(1), msh.nel_dir(2), msh.nel_dir(3)], indu, indv, indw);
+    if element_mask_enabled
+      elem_list = elem_list(element_mask{1}, element_mask{2});
+      msh_col.nel_dir = [1, length(element_mask{1}), length(element_mask{2})];
+    end
     msh_col.elem_list = elem_list(:);
   end
-
-  msh_col.nel_dir = msh.nel_dir;
-  msh_col.nel_dir(1) = 1;
-  msh_col.nel = msh.nel / msh.nel_dir(1);
+  
+  msh_col.nel = numel(msh_col.elem_list);
 %   msh_col.nel  = msh.nelcol;
 
   msh_col.nqn_dir = msh.nqn_dir;
@@ -79,9 +108,20 @@ function msh_col = msh_evaluate_col (msh, colnum, varargin)
 
   msh_col.qn = msh.qn; 
   msh_col.qn{1} = msh.qn{1}(:,colnum);
+  if element_mask_enabled
+    for idim=2:msh.ndim
+      msh_col.qn{idim} = msh.qn{idim}(:,element_mask{idim-1});
+    end
+  end
+  
   if (~isempty (msh.qw))
     msh_col.qw = msh.qw; 
     msh_col.qw{1} = msh.qw{1}(:,colnum);
+    if element_mask_enabled
+      for idim=2:msh.ndim
+        msh_col.qw{idim} = msh.qw{idim}(:,element_mask{idim-1});
+      end
+    end
   end
 
   for idim = 1:msh.ndim

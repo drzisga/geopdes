@@ -11,11 +11,12 @@
 %              or points for visualization (see msh_cartesian/msh_evaluate_col)
 %   'option', value: additional optional parameters, currently available options are:
 %            
-%              Name     |   Default value |  Meaning
-%           ------------+-----------------+----------------------------------
-%            value      |      true       |  compute shape_functions
-%            gradient   |      false      |  compute shape_function_gradients
-%            hessian    |      false      |  compute shape_function_hessians
+%              Name       |   Default value |  Meaning
+%           --------------+-----------------+---------------------------------------
+%            value        |      true       |  compute shape_functions
+%            gradient     |      false      |  compute shape_function_gradients
+%            hessian      |      false      |  compute shape_function_hessians
+%            element_mask |      all        |  list of elements which are assembled
 %
 % OUTPUT:
 %
@@ -56,6 +57,7 @@ function sp = sp_evaluate_col_param (space, msh, varargin)
 value = true;
 gradient = false;
 hessian = false;
+element_mask_enabled = false;
 if (~isempty (varargin))
   if (~rem (length (varargin), 2) == 0)
     error ('sp_evaluate_col_param: options must be passed in the [option, value] format');
@@ -67,6 +69,9 @@ if (~isempty (varargin))
       gradient = varargin {ii+1};
     elseif (strcmpi (varargin {ii}, 'hessian'))
       hessian = varargin {ii+1};
+    elseif (strcmpi (varargin {ii}, 'element_mask'))
+      element_mask_enabled = true;
+      element_mask = varargin {ii+1};
     else
       error ('sp_evaluate_col_param: unknown option %s', varargin {ii});
     end
@@ -77,7 +82,11 @@ sp_univ = space.sp_univ;
 
 elem_list{1} = msh.colnum;
 for idim = 2:msh.ndim
-  elem_list{idim} = 1:msh.nel_dir(idim);
+  if element_mask_enabled
+    elem_list{idim} = element_mask{idim-1};
+  else
+    elem_list{idim} = 1:msh.nel_dir(idim);
+  end
 end
 
 for idim = 1:msh.ndim

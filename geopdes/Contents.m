@@ -6,6 +6,7 @@
 %   geopdes_elasticity_examples
 %   geopdes_fluid_examples
 %   geopdes_maxwell_examples
+%   geopdes_surrogate_examples
 %
 % The package contains the following functions. A detailed help for each function is available typing "help <function_name>"
 %
