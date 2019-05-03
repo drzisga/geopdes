@@ -14,7 +14,10 @@
 %
 % OUTPUT:
 %
-%   K_surr: assembled surrogate stiffness matrix
+%   mat:    assembled surrogate stiffness matrix
+%   rows:   row indices of the nonzero entries
+%   cols:   column indices of the nonzero entries
+%   values: values of the nonzero entries
 % 
 % Copyright (C) 2009, 2010 Carlo de Falco
 % Copyright (C) 2011, 2017 Rafael Vazquez
@@ -33,7 +36,7 @@
 %    You should have received a copy of the GNU General Public License
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-function [K_surr] = op_gradu_gradv_surrogate_2d(space, msh, coeff, M, q)
+function varargout = op_gradu_gradv_surrogate_2d(space, msh, coeff, M, q)
 
 if msh.ndim ~= 2
   error('op_gradu_gradv_surrogate_2d: This function only supports 2D');
@@ -156,5 +159,14 @@ K_surr = K_surr + K_interp;
 
 % Enforce zero row-sum property
 K_surr(logical(speye(size(K_surr)))) = diag(K_surr) - sum(K_surr, 2);
+
+if (nargout == 1)
+  varargout{1} = K_surr;
+elseif (nargout == 3)
+  [rows, cols, vals] = find (K_surr);
+  varargout{1} = rows;
+  varargout{2} = cols;
+  varargout{3} = vals;
+end
 
 end
