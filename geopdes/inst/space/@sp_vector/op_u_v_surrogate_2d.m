@@ -174,8 +174,6 @@ function varargout = op_u_v_surrogate_2d (space, msh, coeff, M, q)
       K_surr(((I-1)*blocklength+1):(I*blocklength), ((J-1)*blocklength+1):(J*blocklength)) = K_sub;
     end
   end
-  
-  spy(K_surr);
 
   if (nargout == 1)
     varargout{1} = K_surr;
