@@ -11,13 +11,14 @@
 %              or points for visualization (see msh_cartesian/msh_evaluate_col)
 %   'option', value: additional optional parameters, currently available options are:
 %            
-%              Name     |   Default value |  Meaning
-%           ------------+-----------------+----------------------------------
-%            value      |      true       |  compute shape_functions
-%            gradient   |      false      |  compute shape_function_gradients
-%            divergence |      false      |  compute shape_function_divs
-%            curl       |      false      |  compute shape_function_curls
-%            hessian    |      false      |  compute shape_function_hessians
+%              Name       |   Default value |  Meaning
+%           --------------+-----------------+----------------------------------
+%            value        |      true       |  compute shape_functions
+%            gradient     |      false      |  compute shape_function_gradients
+%            divergence   |      false      |  compute shape_function_divs
+%            curl         |      false      |  compute shape_function_curls
+%            hessian      |      false      |  compute shape_function_hessians
+%            element_mask |      all        |  list of elements which are assembled
 %
 % OUTPUT:
 %
@@ -64,6 +65,7 @@ gradient = false;
 divergence = false;
 curl = false;
 hessian = false;
+element_mask_enabled = false;
 if (~isempty (varargin))
   if (~rem (length (varargin), 2) == 0)
     error ('sp_evaluate_col_param: options must be passed in the [option, value] format');
@@ -79,6 +81,9 @@ if (~isempty (varargin))
       divergence = varargin {ii+1};
     elseif (strcmpi (varargin {ii}, 'hessian'))
       hessian = varargin {ii+1};
+    elseif (strcmpi (varargin {ii}, 'element_mask'))
+      element_mask_enabled = true;
+      element_mask =  varargin {ii+1};  
     else
       error ('sp_evaluate_col_param: unknown option %s', varargin {ii});
     end
@@ -87,7 +92,11 @@ end
 
 first_der = gradient || divergence || curl;
 for icomp = 1:space.ncomp_param
-  sp_col_scalar(icomp) = sp_evaluate_col_param (space.scalar_spaces{icomp}, msh, 'value', value, 'gradient', first_der, 'hessian', hessian);
+  if element_mask_enabled
+    sp_col_scalar(icomp) = sp_evaluate_col_param (space.scalar_spaces{icomp}, msh, 'value', value, 'gradient', first_der, 'hessian', hessian, 'element_mask', element_mask);
+  else
+    sp_col_scalar(icomp) = sp_evaluate_col_param (space.scalar_spaces{icomp}, msh, 'value', value, 'gradient', first_der, 'hessian', hessian);
+  end
 end
 
 ndof_scalar = [sp_col_scalar.ndof];

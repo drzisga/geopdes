@@ -11,12 +11,13 @@
 %              or points for visualization (see msh_cartesian/msh_evaluate_col)
 %   'option', value: additional optional parameters, currently available options are:
 %            
-%              Name     |   Default value |  Meaning
-%           ------------+-----------------+----------------------------------
-%            value      |      true       |  compute shape_functions
-%            gradient   |      false      |  compute shape_function_gradients
-%            divergence |      false      |  compute shape_function_divs
-%            curl       |      false      |  compute shape_function_curls
+%              Name       |   Default value |  Meaning
+%           --------------+-----------------+----------------------------------
+%            value        |      true       |  compute shape_functions
+%            gradient     |      false      |  compute shape_function_gradients
+%            divergence   |      false      |  compute shape_function_divs
+%            curl         |      false      |  compute shape_function_curls
+%            element_mask |      all        |  list of elements which are assembled
 %
 % OUTPUT:
 %
@@ -61,6 +62,7 @@ gradient = false;
 divergence = false;
 curl = false;
 hessian = false;
+element_mask_enabled = false;
 if (~isempty (varargin))
   if (~rem (length (varargin), 2) == 0)
     error ('sp_evaluate_col: options must be passed in the [option, value] format');
@@ -76,6 +78,9 @@ if (~isempty (varargin))
       divergence = varargin {ii+1};
     elseif (strcmpi (varargin {ii}, 'hessian'))
       hessian = varargin {ii+1};
+    elseif (strcmpi (varargin {ii}, 'element_mask'))
+      element_mask_enabled = true;
+      element_mask =  varargin {ii+1};
     else
       error ('sp_evaluate_col: unknown option %s', varargin {ii});
     end
@@ -92,7 +97,11 @@ switch (lower (space.transform))
     div_param = divergence;
 end
 
-sp = sp_evaluate_col_param (space, msh, 'value', value_param, 'gradient', grad_param, 'divergence', div_param, 'curl', curl_param, 'hessian', hessian);
+if element_mask_enabled
+  sp = sp_evaluate_col_param (space, msh, 'value', value_param, 'gradient', grad_param, 'divergence', div_param, 'curl', curl_param, 'hessian', hessian, 'element_mask', element_mask);
+else
+  sp = sp_evaluate_col_param (space, msh, 'value', value_param, 'gradient', grad_param, 'divergence', div_param, 'curl', curl_param, 'hessian', hessian);
+end
 
 switch (lower (space.transform))
   case {'grad-preserving'}
