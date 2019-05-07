@@ -125,54 +125,52 @@ function varargout = op_u_v_surrogate_2d (space, msh, coeff, M, q)
   % Extract sub-blocks
   blocklength = space.scalar_spaces{1}.ndof;
   for I = 1:space.ncomp_param
-    for J = 1:space.ncomp_param
-      K_sub = K_surr(((I-1)*blocklength+1):(I*blocklength), ((J-1)*blocklength+1):(J*blocklength));
-      sp_i = [];
-      sp_j = [];
-      sp_v = [];
+    K_sub = K_surr(((I-1)*blocklength+1):(I*blocklength), ((I-1)*blocklength+1):(I*blocklength));
+    sp_i = [];
+    sp_j = [];
+    sp_v = [];
 
-      % Apply local interpolation surrogate approach
-      for i=-iga_degree:iga_degree
-        for j=-iga_degree:iga_degree
+    % Apply local interpolation surrogate approach
+    for i=-iga_degree:iga_degree
+      for j=-iga_degree:iga_degree
 
-          shift = i + num_1D_basis * j;
+        shift = i + num_1D_basis * j;
 
-          % Skip if not upper part or on the diagonal
-          if shift < 0
-            continue;
-          end
+        % Skip if not upper part or on the diagonal
+        if shift < 0
+          continue;
+        end
 
-          % Obtain stencil function values for the sample points
-          stencilfunc = K_sub(sub2ind(size(K_sub), row_indices(:), row_indices(:) + shift));
-          stencilfunc = reshape(stencilfunc, num_1D_basis_inner, num_1D_basis_inner);
-          sf_sample = full(stencilfunc(ind, ind));
+        % Obtain stencil function values for the sample points
+        stencilfunc = K_sub(sub2ind(size(K_sub), row_indices(:), row_indices(:) + shift));
+        stencilfunc = reshape(stencilfunc, num_1D_basis_inner, num_1D_basis_inner);
+        sf_sample = full(stencilfunc(ind, ind));
 
-          % Interpolate missing values
-          tmp = interp2(X_sample, Y_sample, sf_sample, X, Y, method);
+        % Interpolate missing values
+        tmp = interp2(X_sample, Y_sample, sf_sample, X, Y, method);
 
-          % Add contribution to sparse vectors
-          % Add diagonal only once
-          if shift == 0
-            sp_i = [sp_i, row_indices(:)'];
-            sp_j = [sp_j, row_indices(:)'];
-            sp_v = [sp_v, tmp(:)'];
-          else
-            sp_i = [sp_i, row_indices(:)', row_indices(:)' + shift];
-            sp_j = [sp_j, row_indices(:)' + shift, row_indices(:)'];
-            sp_v = [sp_v, tmp(:)', tmp(:)'];
-          end
+        % Add contribution to sparse vectors
+        % Add diagonal only once
+        if shift == 0
+          sp_i = [sp_i, row_indices(:)'];
+          sp_j = [sp_j, row_indices(:)'];
+          sp_v = [sp_v, tmp(:)'];
+        else
+          sp_i = [sp_i, row_indices(:)', row_indices(:)' + shift];
+          sp_j = [sp_j, row_indices(:)' + shift, row_indices(:)'];
+          sp_v = [sp_v, tmp(:)', tmp(:)'];
         end
       end
-
-      % Combine surrogate matrix and standard matrix
-      K_interp = sparse(sp_i, sp_j, sp_v, length(K_sub), length(K_sub));
-      idx_interp = find(K_interp);
-      idx_surr = find(K_sub);
-      idx_intersect = intersect(idx_interp,idx_surr);
-      K_sub(idx_intersect) = 0;
-      K_sub = K_sub + K_interp;
-      K_surr(((I-1)*blocklength+1):(I*blocklength), ((J-1)*blocklength+1):(J*blocklength)) = K_sub;
     end
+
+    % Combine surrogate matrix and standard matrix
+    K_interp = sparse(sp_i, sp_j, sp_v, length(K_sub), length(K_sub));
+    idx_interp = find(K_interp);
+    idx_surr = find(K_sub);
+    idx_intersect = intersect(idx_interp,idx_surr);
+    K_sub(idx_intersect) = 0;
+    K_sub = K_sub + K_interp;
+    K_surr(((I-1)*blocklength+1):(I*blocklength), ((I-1)*blocklength+1):(I*blocklength)) = K_sub;
   end
 
   if (nargout == 1)
