@@ -190,8 +190,6 @@ function varargout = op_su_ev_surrogate_2d (space, msh, lambda, mu, M, q)
     end
   end
   
-  spy(K_surr);
-  
   % Enforce zero row-sum property
   K_surr(logical(speye(size(K_surr)))) = diag(K_surr) - sum(K_surr, 2);
 
