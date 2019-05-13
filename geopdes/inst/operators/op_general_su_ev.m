@@ -64,23 +64,18 @@ function varargout = op_general_su_ev (spu, spv, msh, C)
       gradv_iel = reshape (gradv(:,:,:,:,iel), spv.ncomp, ndir, msh.nqn, spv.nsh_max);
 
       jacdet_weights_C_iel = squeeze(jacdet_weights_C(:,iel,:,:,:,:));
-      
       elementary_values = zeros(spv.nsh_max, spu.nsh_max);
       
-      for sh_v=1:spv.nsh_max
-      for sh_u=1:spu.nsh_max
-      for qp=1:msh.nqn
       for i=1:spv.ncomp
         for j = 1:spv.ncomp
           for k = 1:spu.ncomp
             for l = 1:spu.ncomp
-              elementary_values(sh_v,sh_u) = elementary_values(sh_v,sh_u) + jacdet_weights_C_iel(qp,i,j,k,l) * gradv_iel(i,j,qp,sh_v) * gradu_iel(k,l,qp,sh_u);
+              for qp=1:msh.nqn
+                elementary_values = elementary_values + jacdet_weights_C_iel(qp,i,j,k,l) * squeeze(gradv_iel(i,j,qp,:)) * squeeze(gradu_iel(k,l,qp,:))';
+              end
             end
           end
         end
-      end
-      end
-      end
       end
 
       [rows_loc, cols_loc] = ndgrid (spv.connectivity(:,iel), spu.connectivity(:,iel));
