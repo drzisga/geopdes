@@ -151,7 +151,7 @@ end
 ncounter = 0;
 
 for jel = elems_inner{1}
-  msh_col = msh_evaluate_col(msh, jel, 'element_mask', elems_inner);
+  msh_col = msh_evaluate_col_short(msh, jel, elems_inner);
   sp_col = sp_evaluate_col(space, msh_col, 'value', false, 'element_mask', elems_inner);
 
   if plots
@@ -194,4 +194,40 @@ elseif (nargout == 3)
   varargout{3} = vals;
 end
 
+end
+
+function msh_col = msh_evaluate_col_short (msh, colnum, element_list_mask)
+  msh_col.ndim = msh.ndim;
+  msh_col.rdim = msh.rdim;
+
+  msh_col.colnum = colnum;
+
+  if (msh.ndim == 1)
+   msh_col.elem_list = colnum;
+  elseif (msh.ndim == 2)
+   msh_col.elem_list = colnum + msh.nel_dir(1)*(0:msh.nel_dir(2)-1);
+  elseif (msh.ndim == 3)
+   indu = colnum * ones(msh.nel_dir(2), msh.nel_dir(3));
+   indv = repmat ((1:msh.nel_dir(2))', 1, msh.nel_dir(3));
+   indw = repmat ((1:msh.nel_dir(3)), msh.nel_dir(2), 1);
+   elem_list = sub2ind ([msh.nel_dir(1), msh.nel_dir(2), msh.nel_dir(3)], indu, indv, indw);
+   msh_col.elem_list = elem_list(:);
+  end
+  
+  msh_col.elem_list = msh_col.elem_list(element_list_mask{1}); % edited
+
+  msh_col.nel_dir = [1, length(msh_col.elem_list)]; % edited
+  msh_col.nel = length(msh_col.elem_list); % edited
+
+  msh_col.nqn_dir = msh.nqn_dir;
+  msh_col.nqn  = msh.nqn;
+
+  msh_col.qn = msh.qn; 
+  msh_col.qn{1} = msh.qn{1}(:,colnum);
+  msh_col.qn{2} = msh.qn{2}(:,element_list_mask{1}); % edited
+  if (~isempty (msh.qw))
+    msh_col.qw = msh.qw; 
+    msh_col.qw{1} = msh.qw{1}(:,colnum);
+    msh_col.qw{2} = msh.qw{2}(:,element_list_mask{1}); % edited
+  end
 end
