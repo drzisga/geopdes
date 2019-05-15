@@ -1,4 +1,5 @@
-% OP_GENERAL_SU_EV_SURROGATE_2D: assemble the matrix A = [a(i,j)], a(i,j) = 1/2 (sigma (u_j), epsilon (v_i)), exploiting the tensor product structure.
+% OP_GENERAL_SU_EV_SURROGATE_2D: assemble the matrix A = [a(i,j)], a(i,j) = 1/2 (C : epsilon (u_j), epsilon (v_i)), exploiting the tensor product structure
+% using the surrogate method.
 %
 %   mat = op_general_su_ev_surrogate_2d (spu, spv, msh, C, M, q);
 %   [rows, cols, values] = op_general_su_ev_surrogate_2d (spu, spv, msh, C, M, q);
