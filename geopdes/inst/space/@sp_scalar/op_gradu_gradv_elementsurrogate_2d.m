@@ -82,14 +82,10 @@ for jel = elems_sample{1}
         element_usage_assemble(msh_col.elem_list) = 1;
     end
 
-    if (nargin == 4)
-      for idim = 1:msh.rdim
-        x{idim} = reshape (msh_col.geo_map(idim,:,:), msh_col.nqn, msh_col.nel);
-      end
-      coeffs = coeff (x{:});
-    else
-      coeffs = ones (msh_col.nqn, msh_col.nel);
+    for idim = 1:msh.rdim
+      coords{idim} = reshape (msh_col.geo_map(idim,:,:), msh_col.nqn, msh_col.nel);
     end
+    coeffs = coeff (coords{:});
 
     [~, ~, vals] = op_gradu_gradv(sp_col, sp_col, msh_col, coeffs);
     
@@ -120,14 +116,10 @@ for jel = elems_all{1}
       element_usage_assemble(msh_col.elem_list) = 1;
   end
 
-  if (nargin == 4)
-    for idim = 1:msh.rdim
-      x{idim} = reshape (msh_col.geo_map(idim,:,:), msh_col.nqn, msh_col.nel);
-    end
-    coeffs = coeff (x{:});
-  else
-    coeffs = ones (msh_col.nqn, msh_col.nel);
+  for idim = 1:msh.rdim
+    coords{idim} = reshape (msh_col.geo_map(idim,:,:), msh_col.nqn, msh_col.nel);
   end
+  coeffs = coeff (coords{:});
 
   K_surr = K_surr + op_gradu_gradv(sp_col, sp_col, msh_col, coeffs);
 end
