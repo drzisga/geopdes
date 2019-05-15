@@ -1,14 +1,14 @@
-% OP_SU_EV_TP: assemble the matrix A = [a(i,j)], a(i,j) = 1/2 (sigma (u_j), epsilon (v_i)), exploiting the tensor product structure.
+% OP_GENERAL_SU_EV_TP: assemble the matrix A = [a(i,j)], a(i,j) = 1/2 (sigma (u_j), epsilon (v_i)), exploiting the tensor product structure.
 %
-%   mat = op_su_ev_tp (spu, spv, msh, lambda, mu);
-%   [rows, cols, values] = op_su_ev_tp (spu, spv, msh, lambda, mu);
+%   mat = op_general_su_ev_tp (spu, spv, msh, C);
+%   [rows, cols, values] = op_general_su_ev_tp (spu, spv, msh, C);
 %
 % INPUT:
 %    
-%   spu:     object representing the space of trial functions (see sp_vector)
-%   spv:     object representing the space of test functions (see sp_vector)
-%   msh:     object that defines the domain partition and the quadrature rule (see msh_cartesian)
-%   lambda, mu: function handles to compute the Lame' coefficients
+%   spu: object representing the space of trial functions (see sp_vector)
+%   spv: object representing the space of test functions (see sp_vector)
+%   msh: object that defines the domain partition and the quadrature rule (see msh_cartesian)
+%   C:   fourth-order stiffness tensor
 %
 % OUTPUT:
 %
@@ -18,6 +18,7 @@
 %   values: values of the nonzero entries
 % 
 % Copyright (C) 2011, 2017 Rafael Vazquez
+% Copyright (C) 2019 Daniel Drzisga
 %
 %    This program is free software: you can redistribute it and/or modify
 %    it under the terms of the GNU General Public License as published by
