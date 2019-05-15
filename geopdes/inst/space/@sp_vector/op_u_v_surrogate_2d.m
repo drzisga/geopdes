@@ -90,10 +90,10 @@ function varargout = op_u_v_surrogate_2d (space, msh, coeff, M, q)
   row_indices_subset = row_indices_subset(row_indices_subset <= (2*iga_degree + 1) * num_1D_basis);
 
   % Create mask for active elements
-  element_mask{1} = sp_get_cells(space, msh, row_indices_subset');
+  element_mask{1} = sp_get_cells(space, msh, row_indices_subset.');
   element_mask{1} = element_mask{1}(element_mask{1} <= (iga_degree + 1) * msh.nel_dir(1));
   element_mask{1} = element_mask{1} - iga_degree * msh.nel_dir(1);
-  element_mask{1} = [(1:(2*iga_degree))'; element_mask{1}; ((msh.nel_dir(1)-(2*iga_degree-1)):msh.nel_dir(1))'];
+  element_mask{1} = [(1:(2*iga_degree)).'; element_mask{1}; ((msh.nel_dir(1)-(2*iga_degree-1)):msh.nel_dir(1)).'];
   element_mask{1} = unique(element_mask{1});
 
   % Create mask for boundary elements
@@ -152,13 +152,13 @@ function varargout = op_u_v_surrogate_2d (space, msh, coeff, M, q)
         % Add contribution to sparse vectors
         % Add diagonal only once
         if shift == 0
-          sp_i = [sp_i, row_indices(:)'];
-          sp_j = [sp_j, row_indices(:)'];
-          sp_v = [sp_v, tmp(:)'];
+          sp_i = [sp_i, row_indices(:).'];
+          sp_j = [sp_j, row_indices(:).'];
+          sp_v = [sp_v, tmp(:).'];
         else
-          sp_i = [sp_i, row_indices(:)', row_indices(:)' + shift];
-          sp_j = [sp_j, row_indices(:)' + shift, row_indices(:)'];
-          sp_v = [sp_v, tmp(:)', tmp(:)'];
+          sp_i = [sp_i, row_indices(:).', row_indices(:).' + shift];
+          sp_j = [sp_j, row_indices(:).' + shift, row_indices(:).'];
+          sp_v = [sp_v, tmp(:).', tmp(:).'];
         end
       end
     end

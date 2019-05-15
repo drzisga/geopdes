@@ -82,7 +82,7 @@ row_indices_subset = row_indices(ind, ind, ind);
 row_indices_subset = row_indices_subset(:);
 
 % Create mask for active elements
-element_mask = sp_get_cells(space, msh, row_indices_subset');
+element_mask = sp_get_cells(space, msh, row_indices_subset.');
 element_mask = element_mask - (element_mask(1) - iga_degree - 1);
 element_mask = element_mask(element_mask <= msh.nel_dir(1));
 element_mask = unique(element_mask);
@@ -142,9 +142,9 @@ for i=-iga_degree:iga_degree
       tmp = interp3(X_sample, Y_sample, Z_sample, sf_sample, X, Y, Z, method);
       
       % Add contribution to sparse vectors
-      sp_i = [sp_i, row_indices(:)', row_indices(:)' + shift];
-      sp_j = [sp_j, row_indices(:)' + shift, row_indices(:)'];
-      sp_v = [sp_v, tmp(:)', tmp(:)'];
+      sp_i = [sp_i, row_indices(:)', row_indices(:).' + shift];
+      sp_j = [sp_j, row_indices(:).' + shift, row_indices(:).'];
+      sp_v = [sp_v, tmp(:).', tmp(:).'];
     end
   end
 end

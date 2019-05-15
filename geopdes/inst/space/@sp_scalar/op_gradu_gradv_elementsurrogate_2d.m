@@ -172,7 +172,7 @@ K_surr = K_surr + sparse(rows(1:ncounter), cols(1:ncounter), values(1:ncounter),
 K_surr(logical(speye(size(K_surr)))) = diag(K_surr) - sum(K_surr, 2);
 
 if plots
-    element_usage_assemble = reshape(element_usage_assemble, msh.nel_dir(1), msh.nel_dir(1))';
+    element_usage_assemble = reshape(element_usage_assemble, msh.nel_dir(1), msh.nel_dir(1)).';
     figure;
     imagesc(element_usage_assemble);
     hold on;
