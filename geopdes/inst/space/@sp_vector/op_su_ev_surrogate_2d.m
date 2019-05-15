@@ -169,7 +169,7 @@ function varargout = op_su_ev_surrogate_2d (space, msh, lambda, mu, M, q)
             else
               sp_i = [sp_i, row_indices(:).', row_indices(:).' + shift];
               sp_j = [sp_j, row_indices(:).' + shift, row_indices(:).'];
-              sp_v = [sp_v, tmp(:)', tmp(:)'];
+              sp_v = [sp_v, tmp(:).', tmp(:).'];
             end
           else
             sp_i = [sp_i, row_indices(:).'];
