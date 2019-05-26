@@ -69,20 +69,18 @@ function varargout = op_nonlinear_su_ev (spu, spv, msh, lambda, mu, gradientU)
       for i=1:spv.nsh_max
         for j = 1:spu.nsh_max
           for qp=1:msh.nqn
-            term1 = gradnonlinearity_iel(:,:,qp).' * gradu_iel(:,:,qp,j);
-            term2 = gradu_iel(:,:,qp,j).' * gradnonlinearity_iel(:,:,qp);
-            mat = term1 + term2;
             
-            lhs = 0.5 * lambda * trace(mat) * eye(2) + mu * mat;
+            %term1 = gradnonlinearity_iel(:,:,qp).' * gradu_iel(:,:,qp,j);
+            %term2 = gradu_iel(:,:,qp,j).' * gradnonlinearity_iel(:,:,qp);
+            E = 0.5 * (gradu_iel(:,:,qp,j) + gradu_iel(:,:,qp,j).');
+            
+            lhs = lambda * trace(E) * eye(2) + 2 * mu * E;
             lhs = jacdet_weights_iel(qp) * lhs;
-            
-            %lhs = mu * mat;
-            %lhs = jacdet_weights_iel(qp) * lhs;
                         
             val = lhs .* epsv_iel(:,:,qp,i);
             val = sum(sum(val));
             
-            elementary_values(i,j) = val;
+            elementary_values(i,j) = elementary_values(i,j) + val;
           end
         end
       end
