@@ -2,8 +2,8 @@
 % epsilon (v_i)), exploiting the tensor product structure and using the
 % surrogate method.
 %
-%   mat = op_su_ev_surrogate_2d (spu, msh, lambda, mu);
-%   [rows, cols, values] = op_su_ev_surrogate_2d (spu,  msh, lambda, mu);
+%   mat = op_su_ev_surrogate_2d (spu, msh, lambda, mu, M, q);
+%   [rows, cols, values] = op_su_ev_surrogate_2d (spu,  msh, lambda, mu, M, q);
 %
 % INPUT:
 %    
@@ -191,7 +191,7 @@ function varargout = op_su_ev_surrogate_2d (space, msh, lambda, mu, M, q)
   end
   
   % Enforce zero row-sum property
-  K_surr(logical(speye(size(K_surr)))) = diag(K_surr) - sum(K_surr, 2);
+  % K_surr(logical(speye(size(K_surr)))) = diag(K_surr) - sum(K_surr, 2);
 
   if (nargout == 1)
     varargout{1} = K_surr;
