@@ -71,7 +71,7 @@ function varargout = op_nonlinear_su_ev (spu, spv, msh, lambda, mu, gradientU)
           for qp=1:msh.nqn
             
             nonlinearTerm = gradnonlinearity_iel(:,:,qp).' * gradu_iel(:,:,qp,j);
-            E = 0.5 * (gradu_iel(:,:,qp,j) + gradu_iel(:,:,qp,j).' + nonlinearTerm + nonlinearTerm.');
+            E = 0.5 * (nonlinearTerm + nonlinearTerm.');
             
             lhs = lambda * trace(E) * eye(2) + 2 * mu * E;
             lhs = jacdet_weights_iel(qp) * lhs;
