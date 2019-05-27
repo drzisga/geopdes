@@ -39,30 +39,16 @@ function rhs = op_f_ev (spv, msh, f)
  for iel = 1:msh.nel
    if (all (msh.jacdet(:,iel)))
      jacdet_weights = reshape (msh.jacdet(:, iel) .* msh.quad_weights(:, iel), 1, 1, msh.nqn);
-     jacdet_weights_coeff_iel = squeeze(f(:,:,:,iel));
-     
-     for j=1:spv.ncomp
-       for i=1:spv.ncomp
-         jacdet_weights_coeff_iel(i,j,:) = jacdet_weights .* jacdet_weights_coeff_iel(i,j,:);
-       end
-     end
+     jacdet_weights_coeff_iel = bsxfun(@times, jacdet_weights, f(:,:,:,iel));
      
      gradv_iel = reshape (gradv(:,:,:,:,iel), spv.ncomp, ndir, msh.nqn, spv.nsh_max);
-     epsv_iel = zeros(size(gradv_iel));
-     for i=1:spv.nsh_max
-       for qp=1:msh.nqn
-         epsv_iel(:,:,qp,i) = 0.5 * (gradv_iel(:,:,qp,i) + gradv_iel(:,:,qp,i).');
-       end
-     end
+     epsv_iel = (gradv_iel + permute(gradv_iel, [2 1 3 4]))/2;
+     epsv_iel = reshape(epsv_iel, [spv.ncomp*ndir, msh.nqn, spv.nsh_max, 1]);
+     
+     jacdet_weights_coeff_iel = reshape(jacdet_weights_coeff_iel, [spv.ncomp*ndir, msh.nqn, 1, 1]);
 
-     rhs_loc = zeros(spv.nsh_max, 1);
-     for qp = 1:msh.nqn
-       for j = 1:spv.ncomp
-         for i=1:spv.ncomp
-           rhs_loc = rhs_loc + jacdet_weights_coeff_iel(i,j,qp) * squeeze(epsv_iel(i,j,qp,:));
-         end
-       end
-     end
+     aux_val = bsxfun(@times, jacdet_weights_coeff_iel, epsv_iel);
+     rhs_loc = sum (sum (aux_val, 1), 2);
 
      indices = find (spv.connectivity(:,iel));
      rhs_loc = rhs_loc(indices); conn_iel = spv.connectivity(indices,iel);
