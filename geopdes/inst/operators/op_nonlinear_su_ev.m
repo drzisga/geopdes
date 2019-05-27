@@ -54,35 +54,32 @@ function varargout = op_nonlinear_su_ev (spu, spv, msh, lambda, mu, gradientU)
       gradu_iel = reshape (gradu(:,:,:,:,iel), spu.ncomp, ndir, msh.nqn, spu.nsh_max);
       gradv_iel = reshape (gradv(:,:,:,:,iel), spv.ncomp, ndir, msh.nqn, spv.nsh_max);
 
-      jacdet_weights_iel = jacdet_weights(:,iel);
-      gradnonlinearity_iel = gradientU(:,:,:,iel);
+      jacdet_weights_iel = reshape(jacdet_weights(:,iel), 1, 1, msh.nqn, 1);
+      grad_iel = gradientU(:,:,:,iel);
+      grad_iel_T = permute(grad_iel, [2 1 3 4]);
       
-      epsv_iel = zeros(size(gradv_iel));
-      for i=1:spv.nsh_max
-        for qp=1:msh.nqn
-          epsv_iel(:,:,qp,i) = 0.5 * (gradv_iel(:,:,qp,i) + gradv_iel(:,:,qp,i).');
+      E = zeros(2, 2, msh.nqn, spv.nsh_max);
+      
+      for j = 1:spv.nsh_max
+        for qp = 1:msh.nqn
+          E(:,:,qp,j) = grad_iel_T(:,:,qp) * gradu_iel(:,:,qp,j);
         end
       end
-
-      elementary_values = zeros(spv.nsh_max, spu.nsh_max);
       
-      for i=1:spv.nsh_max
-        for j = 1:spu.nsh_max
-          for qp=1:msh.nqn
-            
-            nonlinearTerm = gradnonlinearity_iel(:,:,qp).' * gradu_iel(:,:,qp,j);
-            E = 0.5 * (nonlinearTerm + nonlinearTerm.');
-            
-            lhs = lambda * trace(E) * eye(2) + 2 * mu * E;
-            lhs = jacdet_weights_iel(qp) * lhs;
-                        
-            val = lhs .* epsv_iel(:,:,qp,i);
-            val = sum(sum(val));
-            
-            elementary_values(i,j) = elementary_values(i,j) + val;
-          end
-        end
-      end
+      E = E + permute(E, [2 1 3 4]);
+      
+      epsv_iel = 0.5 * (gradv_iel + permute(gradv_iel, [2 1 3 4]));
+      epsv_iel = reshape(epsv_iel, [spv.ncomp*ndir, msh.nqn, spv.nsh_max, 1]);
+      
+      trE = E(1,1,:,:) + E(2,2,:,:);
+      trEId = bsxfun(@times, trE, eye(2));
+      
+      lhs = mu * E + (0.5 * lambda) * trEId;
+      lhs = bsxfun(@times, jacdet_weights_iel, lhs);
+      lhs = reshape(lhs, [spv.ncomp*ndir, msh.nqn, 1, spv.nsh_max]);
+      
+      aux_val = bsxfun(@times, lhs, epsv_iel);
+      elementary_values = sum(sum(aux_val, 1), 2);
 
       [rows_loc, cols_loc] = ndgrid (spv.connectivity(:,iel), spu.connectivity(:,iel));
       indices = rows_loc & cols_loc;
