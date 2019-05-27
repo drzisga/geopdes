@@ -29,61 +29,46 @@
 %    You should have received a copy of the GNU General Public License
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-function rhs = op_f_ev (spv, msh, u, lambda, mu)
+function rhs = op_f_ev (spv, msh, f)
 
  rhs   = zeros (spv.ndof, 1);
  gradv = reshape (spv.shape_function_gradients, spv.ncomp, [], msh.nqn, spv.nsh_max, msh.nel);
  
  ndir = size (gradv, 2);
- 
- jacdet_weights = msh.jacdet .* msh.quad_weights;
 
  for iel = 1:msh.nel
-   if (all (msh.jacdet(:, iel)))
-      gradv_iel = reshape (gradv(:,:,:,:,iel), spv.ncomp, ndir, msh.nqn, spv.nsh_max);
+   if (all (msh.jacdet(:,iel)))
+     jacdet_weights = reshape (msh.jacdet(:, iel) .* msh.quad_weights(:, iel), 1, 1, msh.nqn);
+     jacdet_weights_coeff_iel = squeeze(f(:,:,:,iel));
+     
+     for j=1:spv.ncomp
+       for i=1:spv.ncomp
+         jacdet_weights_coeff_iel(i,j,:) = jacdet_weights .* jacdet_weights_coeff_iel(i,j,:);
+       end
+     end
+     
+     gradv_iel = reshape (gradv(:,:,:,:,iel), spv.ncomp, ndir, msh.nqn, spv.nsh_max);
+     epsv_iel = zeros(size(gradv_iel));
+     for i=1:spv.nsh_max
+       for qp=1:msh.nqn
+         epsv_iel(:,:,qp,i) = 0.5 * (gradv_iel(:,:,qp,i) + gradv_iel(:,:,qp,i).');
+       end
+     end
 
-      jacdet_weights_iel = jacdet_weights(:,iel);
-      
-      epsv_iel = zeros(size(gradv_iel));
-      for i=1:spv.nsh_max
-        for qp=1:msh.nqn
-          epsv_iel(:,:,qp,i) = 0.5 * (gradv_iel(:,:,qp,i) + gradv_iel(:,:,qp,i).');
-        end
-      end
+     rhs_loc = zeros(spv.nsh_max, 1);
+     for qp = 1:msh.nqn
+       for j = 1:spv.ncomp
+         for i=1:spv.ncomp
+           rhs_loc = rhs_loc + jacdet_weights_coeff_iel(i,j,qp) * squeeze(epsv_iel(i,j,qp,:));
+         end
+       end
+     end
 
-      elementary_values = zeros(spv.nsh_max, spv.nsh_max);
-      
-      indices = find (spv.connectivity(:,iel));
-      u_loc = u(spv.connectivity(:,iel));
-      
-      grad_u = zeros(2, 2, msh.nqn);
-      for qp = 1:msh.nqn
-        for j = 1:spv.nsh_max
-          grad_u(:,:,qp) = grad_u(:,:,qp) + u_loc(j) * gradv_iel(:,:,qp,j);
-        end
-      end
-      
-      rhs_loc = zeros(size(u_loc));
-      
-      for i=1:spv.nsh_max
-        for qp=1:msh.nqn
-
-          %N = grad_u(:,:,qp).' * grad_u(:,:,qp);
-          E = 0.5 * (grad_u(:,:,qp) + grad_u(:,:,qp).');
-
-          lhs = lambda * trace(E) * eye(2) + 2 * mu * E;
-          lhs = jacdet_weights_iel(qp) * lhs;
-
-          val = lhs .* epsv_iel(:,:,qp,i);
-          val = sum(sum(val));
-
-          rhs_loc(i) = rhs_loc(i) + val;
-        end
-      end
-      rhs_loc = rhs_loc(indices); conn_iel = spv.connectivity(indices,iel);
-      rhs(conn_iel) = rhs(conn_iel) + rhs_loc(:); 
-    else
-      warning ('geopdes:jacdet_zero_at_quad_node', 'op_general_su_ev: singular map in element number %d', iel)
+     indices = find (spv.connectivity(:,iel));
+     rhs_loc = rhs_loc(indices); conn_iel = spv.connectivity(indices,iel);
+     rhs(conn_iel) = rhs(conn_iel) + rhs_loc(:); 
+   else
+     warning ('geopdes:jacdet_zero_at_quad_node', 'op_f_v: singular map in element number %d', iel)
    end
  end
  

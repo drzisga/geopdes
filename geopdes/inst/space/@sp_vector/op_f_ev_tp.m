@@ -28,7 +28,7 @@
 %    You should have received a copy of the GNU General Public License
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-function rhs = op_f_ev_tp (space, msh, u, lambda,mu)
+function rhs = op_f_ev_tp (space, msh, f)
 
   for icomp = 1:space.ncomp_param
     for idim = 1:msh.ndim
@@ -45,7 +45,7 @@ function rhs = op_f_ev_tp (space, msh, u, lambda,mu)
     msh_col = msh_evaluate_col (msh, iel);
     sp_col  = sp_evaluate_col (space, msh_col, 'value', false, 'gradient', true);
 
-    rhs = rhs + op_f_ev (sp_col, msh_col, u, lambda, mu);
+    rhs = rhs + op_f_ev (sp_col, msh_col, f(sp_col, msh_col));
   end
 
 end
