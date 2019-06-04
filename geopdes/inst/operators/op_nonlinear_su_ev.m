@@ -35,7 +35,7 @@
 %    You should have received a copy of the GNU General Public License
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-function varargout = op_nonlinear_su_ev (spu, spv, msh, lambda, mu, gradientU)
+function varargout = op_nonlinear_su_ev (spu, spv, msh, lambda, mu, u_old)
 
   gradu = reshape (spu.shape_function_gradients, spu.ncomp, [], msh.nqn, spu.nsh_max, msh.nel);
   gradv = reshape (spv.shape_function_gradients, spv.ncomp, [], msh.nqn, spv.nsh_max, msh.nel);
@@ -48,6 +48,9 @@ function varargout = op_nonlinear_su_ev (spu, spv, msh, lambda, mu, gradientU)
 
   jacdet_weights = msh.jacdet .* msh.quad_weights;
   
+  gradu_old = sp_eval_msh(u_old, spu, msh, 'gradient');
+  S = SaintVenantKirchhoffStress(u_old, spu, msh, lambda, mu);
+  
   ncounter = 0;
   for iel = 1:msh.nel
     if (all (msh.jacdet(:, iel)))
@@ -55,31 +58,26 @@ function varargout = op_nonlinear_su_ev (spu, spv, msh, lambda, mu, gradientU)
       gradv_iel = reshape (gradv(:,:,:,:,iel), spv.ncomp, ndir, msh.nqn, spv.nsh_max);
 
       jacdet_weights_iel = reshape(jacdet_weights(:,iel), 1, 1, msh.nqn, 1);
-      grad_iel = gradientU(:,:,:,iel);
-      grad_iel_T = permute(grad_iel, [2 1 3 4]);
+      gradu_old_iel = gradu_old(:,:,:,iel);
       
-      E = zeros(2, 2, msh.nqn, spv.nsh_max);
+      F = gradu_old_iel + eye(2);
       
-      for j = 1:spv.nsh_max
-        for qp = 1:msh.nqn
-          E(:,:,qp,j) = grad_iel_T(:,:,qp) * gradu_iel(:,:,qp,j);
-        end
-      end
+      term1 = mtimesx(gradu_iel, S(:,:,iel));
       
-      E = E + permute(E, [2 1 3 4]);
+      DE = 0.5 * (gradu_iel + mtimesx(permute(gradu_old_iel, [2 1 3 4]), gradu_iel));
+      DE = DE + permute(DE, [2 1 3 4]);
+      trDE = DE(1,1,:,:) + DE(2,2,:,:);
+      trDEId = bsxfun(@times, trDE, eye(2));
+      term2 = mtimesx(F, lambda * trDEId + 2 * mu * DE);
       
-      epsv_iel = 0.5 * (gradv_iel + permute(gradv_iel, [2 1 3 4]));
-      epsv_iel = reshape(epsv_iel, [spv.ncomp*ndir, msh.nqn, spv.nsh_max, 1]);
+      integrand = term1 + term2;
+      integrand = reshape(integrand, [spv.ncomp, ndir, msh.nqn, 1, spu.nsh_max]);
+      integrand = bsxfun(@times, jacdet_weights_iel, integrand);
       
-      trE = E(1,1,:,:) + E(2,2,:,:);
-      trEId = bsxfun(@times, trE, eye(2));
+      gradv_iel = reshape(gradv_iel, [spv.ncomp, ndir, msh.nqn, spv.nsh_max, 1]);
       
-      lhs = mu * E + (0.5 * lambda) * trEId;
-      lhs = bsxfun(@times, jacdet_weights_iel, lhs);
-      lhs = reshape(lhs, [spv.ncomp*ndir, msh.nqn, 1, spv.nsh_max]);
-      
-      aux_val = bsxfun(@times, lhs, epsv_iel);
-      elementary_values = sum(sum(aux_val, 1), 2);
+      integrand = bsxfun(@times, integrand, gradv_iel);
+      elementary_values = sum(sum(sum(integrand, 3), 2), 1);
 
       [rows_loc, cols_loc] = ndgrid (spv.connectivity(:,iel), spu.connectivity(:,iel));
       indices = rows_loc & cols_loc;

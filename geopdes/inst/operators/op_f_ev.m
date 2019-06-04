@@ -29,7 +29,7 @@
 %    You should have received a copy of the GNU General Public License
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-function rhs = op_f_ev (spv, msh, f)
+function rhs = op_f_ev (spv, msh, FS)
 
  rhs   = zeros (spv.ndof, 1);
  gradv = reshape (spv.shape_function_gradients, spv.ncomp, [], msh.nqn, spv.nsh_max, msh.nel);
@@ -39,15 +39,16 @@ function rhs = op_f_ev (spv, msh, f)
  for iel = 1:msh.nel
    if (all (msh.jacdet(:,iel)))
      jacdet_weights = reshape (msh.jacdet(:, iel) .* msh.quad_weights(:, iel), 1, 1, msh.nqn);
-     jacdet_weights_coeff_iel = bsxfun(@times, jacdet_weights, f(:,:,:,iel));
+     jacdet_weights_coeff_iel = bsxfun(@times, jacdet_weights, FS(:,:,:,iel));
      
      gradv_iel = reshape (gradv(:,:,:,:,iel), spv.ncomp, ndir, msh.nqn, spv.nsh_max);
-     epsv_iel = (gradv_iel + permute(gradv_iel, [2 1 3 4]))/2;
-     epsv_iel = reshape(epsv_iel, [spv.ncomp*ndir, msh.nqn, spv.nsh_max, 1]);
+     %epsv_iel = (gradv_iel + permute(gradv_iel, [2 1 3 4]))/2;
+     %epsv_iel = reshape(epsv_iel, [spv.ncomp*ndir, msh.nqn, spv.nsh_max, 1]);
+     gradv_iel = reshape(gradv_iel, [spv.ncomp*ndir, msh.nqn, spv.nsh_max, 1]);
      
      jacdet_weights_coeff_iel = reshape(jacdet_weights_coeff_iel, [spv.ncomp*ndir, msh.nqn, 1, 1]);
 
-     aux_val = bsxfun(@times, jacdet_weights_coeff_iel, epsv_iel);
+     aux_val = bsxfun(@times, jacdet_weights_coeff_iel, gradv_iel);
      rhs_loc = sum (sum (aux_val, 1), 2);
 
      indices = find (spv.connectivity(:,iel));

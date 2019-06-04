@@ -44,8 +44,9 @@ function rhs = op_f_ev_tp (space, msh, f)
   for iel = 1:msh.nel_dir(1)
     msh_col = msh_evaluate_col (msh, iel);
     sp_col  = sp_evaluate_col (space, msh_col, 'value', false, 'gradient', true);
-
-    rhs = rhs + op_f_ev (sp_col, msh_col, f(sp_col, msh_col));
+    
+    [~,FS] = f(sp_col, msh_col);
+    rhs = rhs + op_f_ev (sp_col, msh_col, FS);
   end
 
 end
