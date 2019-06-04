@@ -34,7 +34,7 @@
 %    You should have received a copy of the GNU General Public License
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-function varargout = op_nonlinear_su_ev_tp (space, msh, lambda, mu, u_old)
+function varargout = op_nonlinear_su_ev_tp (space, msh, Stress, DStress, u_old)
 
   for icomp = 1:space.ncomp_param
     for idim = 1:msh.ndim
@@ -52,7 +52,7 @@ function varargout = op_nonlinear_su_ev_tp (space, msh, lambda, mu, u_old)
     msh_col = msh_evaluate_col (msh, iel);
     sp_col = sp_evaluate_col (space, msh_col, 'value', false, 'gradient', true);
 
-    A = A + op_nonlinear_su_ev (sp_col, sp_col, msh_col, lambda, mu, u_old);
+    A = A + op_nonlinear_su_ev (sp_col, sp_col, msh_col, Stress, DStress, u_old);
   end
 
   if (nargout == 1)

@@ -35,7 +35,7 @@
 %    You should have received a copy of the GNU General Public License
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-function varargout = op_nonlinear_su_ev (spu, spv, msh, lambda, mu, u_old)
+function varargout = op_nonlinear_su_ev (spu, spv, msh, Stress, DStress, u_old)
 
   gradu = reshape (spu.shape_function_gradients, spu.ncomp, [], msh.nqn, spu.nsh_max, msh.nel);
   gradv = reshape (spv.shape_function_gradients, spv.ncomp, [], msh.nqn, spv.nsh_max, msh.nel);
@@ -49,7 +49,7 @@ function varargout = op_nonlinear_su_ev (spu, spv, msh, lambda, mu, u_old)
   jacdet_weights = msh.jacdet .* msh.quad_weights;
   
   gradu_old = sp_eval_msh(u_old, spu, msh, 'gradient');
-  S = SaintVenantKirchhoffStress(u_old, spu, msh, lambda, mu);
+  S = Stress(u_old, spu, msh);
   
   ncounter = 0;
   for iel = 1:msh.nel
@@ -57,27 +57,24 @@ function varargout = op_nonlinear_su_ev (spu, spv, msh, lambda, mu, u_old)
       gradu_iel = reshape (gradu(:,:,:,:,iel), spu.ncomp, ndir, msh.nqn, spu.nsh_max);
       gradv_iel = reshape (gradv(:,:,:,:,iel), spv.ncomp, ndir, msh.nqn, spv.nsh_max);
 
-      jacdet_weights_iel = reshape(jacdet_weights(:,iel), 1, 1, msh.nqn, 1);
+      jacdet_weights_iel = reshape(jacdet_weights(:,iel), 1, msh.nqn, 1);
       gradu_old_iel = gradu_old(:,:,:,iel);
       
       F = gradu_old_iel + eye(2);
       
       term1 = mtimesx(gradu_iel, S(:,:,iel));
       
-      DE = 0.5 * (gradu_iel + mtimesx(permute(gradu_old_iel, [2 1 3 4]), gradu_iel));
-      DE = DE + permute(DE, [2 1 3 4]);
-      trDE = DE(1,1,:,:) + DE(2,2,:,:);
-      trDEId = bsxfun(@times, trDE, eye(2));
-      term2 = mtimesx(F, lambda * trDEId + 2 * mu * DE);
+      DSdu = DStress(u_old, gradu_old_iel, gradu_iel, spu, msh);
+      term2 = mtimesx(F, DSdu);
       
       integrand = term1 + term2;
-      integrand = reshape(integrand, [spv.ncomp, ndir, msh.nqn, 1, spu.nsh_max]);
+      integrand = reshape(integrand, [spv.ncomp * ndir, msh.nqn, 1, spu.nsh_max]);
       integrand = bsxfun(@times, jacdet_weights_iel, integrand);
       
-      gradv_iel = reshape(gradv_iel, [spv.ncomp, ndir, msh.nqn, spv.nsh_max, 1]);
+      gradv_iel = reshape(gradv_iel, [spv.ncomp * ndir, msh.nqn, spv.nsh_max, 1]);
       
       integrand = bsxfun(@times, integrand, gradv_iel);
-      elementary_values = sum(sum(sum(integrand, 3), 2), 1);
+      elementary_values = sum(sum(integrand, 2), 1);
 
       [rows_loc, cols_loc] = ndgrid (spv.connectivity(:,iel), spu.connectivity(:,iel));
       indices = rows_loc & cols_loc;
