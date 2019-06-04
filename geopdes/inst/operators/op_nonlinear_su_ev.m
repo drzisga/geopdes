@@ -60,7 +60,7 @@ function varargout = op_nonlinear_su_ev (spu, spv, msh, Stress, DStress, u_old)
       jacdet_weights_iel = reshape(jacdet_weights(:,iel), 1, msh.nqn, 1);
       gradu_old_iel = gradu_old(:,:,:,iel);
       
-      F = gradu_old_iel + eye(2);
+      F = gradu_old_iel + eye(spu.ncomp);
       
       term1 = mtimesx(gradu_iel, S(:,:,iel));
       
