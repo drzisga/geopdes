@@ -62,7 +62,7 @@ function varargout = op_nonlinear_su_ev (spu, spv, msh, Stress, DStress, u_old)
       
       F = gradu_old_iel + eye(spu.ncomp);
       
-      term1 = mtimesx(gradu_iel, S(:,:,iel));
+      term1 = mtimesx(gradu_iel, S(:,:,:,iel));
       
       DSdu = DStress(u_old, gradu_old_iel, gradu_iel, spu, msh);
       term2 = mtimesx(F, DSdu);
