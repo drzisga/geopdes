@@ -38,7 +38,7 @@
 function varargout = op_nonlinear_su_ev (spu, spv, msh, Stress, DStress, u_old)
 
   gradu = reshape (spu.shape_function_gradients, spu.ncomp, [], msh.nqn, spu.nsh_max, msh.nel);
-  gradv = reshape (spv.shape_function_gradients, spv.ncomp, [], msh.nqn, spv.nsh_max, msh.nel);
+  %gradv = reshape (spv.shape_function_gradients, spv.ncomp, [], msh.nqn, spv.nsh_max, msh.nel);
 
   ndir = size (gradu, 2);
 
@@ -55,7 +55,7 @@ function varargout = op_nonlinear_su_ev (spu, spv, msh, Stress, DStress, u_old)
   for iel = 1:msh.nel
     if (all (msh.jacdet(:, iel)))
       gradu_iel = reshape (gradu(:,:,:,:,iel), spu.ncomp, ndir, msh.nqn, spu.nsh_max);
-      gradv_iel = reshape (gradv(:,:,:,:,iel), spv.ncomp, ndir, msh.nqn, spv.nsh_max);
+      %gradv_iel = reshape (gradv(:,:,:,:,iel), spv.ncomp, ndir, msh.nqn, spv.nsh_max);
 
       jacdet_weights_iel = reshape(jacdet_weights(:,iel), 1, msh.nqn, 1);
       gradu_old_iel = gradu_old(:,:,:,iel);
@@ -69,11 +69,10 @@ function varargout = op_nonlinear_su_ev (spu, spv, msh, Stress, DStress, u_old)
       
       integrand = term1 + term2;
       integrand = reshape(integrand, [spv.ncomp * ndir, msh.nqn, 1, spu.nsh_max]);
-      integrand = bsxfun(@times, jacdet_weights_iel, integrand);
+      integrand = jacdet_weights_iel .* integrand;
       
-      gradv_iel = reshape(gradv_iel, [spv.ncomp * ndir, msh.nqn, spv.nsh_max, 1]);
-      
-      integrand = bsxfun(@times, integrand, gradv_iel);
+      gradu_iel = reshape(gradu_iel, [spv.ncomp * ndir, msh.nqn, spv.nsh_max, 1]);
+      integrand = integrand .* gradu_iel;
       elementary_values = sum(sum(integrand, 2), 1);
 
       [rows_loc, cols_loc] = ndgrid (spv.connectivity(:,iel), spu.connectivity(:,iel));
