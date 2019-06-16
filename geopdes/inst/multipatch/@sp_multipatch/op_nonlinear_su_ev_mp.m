@@ -30,7 +30,7 @@
 %    You should have received a copy of the GNU General Public License
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-function A = op_nonlinear_su_ev_surrogate_2d_mp (spu, msh, Stress, DStress, u_old, patch_list)
+function A = op_nonlinear_su_ev_mp (spu, msh, Stress, DStress, u_old, patch_list)
 
   if (nargin < 6)
     patch_list = 1:msh.npatch;
@@ -42,7 +42,10 @@ function A = op_nonlinear_su_ev_surrogate_2d_mp (spu, msh, Stress, DStress, u_ol
   
   ncounter = 0;
   for iptc = patch_list
-    [rs, cs, vs] = op_nonlinear_su_ev (spu.sp_patch{iptc}, msh.msh_patch{iptc}, Stress, DStress, u_old);
+    
+    u_loc = u_old(spu.gnum{iptc});
+    
+    [rs, cs, vs] = op_nonlinear_su_ev_tp (spu.sp_patch{iptc}, msh.msh_patch{iptc}, Stress, DStress, u_loc);
     rows(ncounter+(1:numel (rs))) = spu.gnum{iptc}(rs);
     cols(ncounter+(1:numel (rs))) = spu.gnum{iptc}(cs);
     vals(ncounter+(1:numel (rs))) = vs;
