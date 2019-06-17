@@ -45,7 +45,7 @@ function A = op_nonlinear_su_ev_surrogate_2d_mp (spu, msh, Stress, DStress, u_ol
 
     u_loc = u_old(spu.gnum{iptc});
     
-    [rs, cs, vs] = op_nonlinear_su_ev_surrogate_2d (spu.sp_patch{iptc}, msh.msh_patch{iptc}, Stress, DStress, u_old, M, q);
+    [rs, cs, vs] = op_nonlinear_su_ev_surrogate_2d (spu.sp_patch{iptc}, msh.msh_patch{iptc}, Stress, DStress, u_loc, M, q);
     rows(ncounter+(1:numel (rs))) = spu.gnum{iptc}(rs);
     cols(ncounter+(1:numel (rs))) = spu.gnum{iptc}(cs);
     vals(ncounter+(1:numel (rs))) = vs;
