@@ -25,7 +25,18 @@ function sp = bsp_2_nrb__ (sp, msh, W)
     hessian  = isfield (sp, 'shape_function_hessians');
   end
 
-  W = repmat (reshape (W(sp.connectivity), 1, sp.nsh_max, msh.nel), [msh.nqn, 1, 1]);
+  % Workaround if sp.connectivity contains zero values
+  % Fill zero values with ones, since they are not used later anyway
+  if ~all(sp.connectivity(:))
+    tmp = sp.connectivity;
+    tmp(tmp==0) = 1;
+    W = W(tmp);
+  else
+    W = W(sp.connectivity);
+  end
+  
+  W = repmat (reshape (W, 1, sp.nsh_max, msh.nel), [msh.nqn, 1, 1]);
+  
   shape_functions = W .* sp.shape_functions;
   D = repmat (reshape (sum (shape_functions, 2), msh.nqn, 1, msh.nel), [1, sp.nsh_max, 1]);
   sp.shape_functions = shape_functions ./ D;
