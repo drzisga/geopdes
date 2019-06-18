@@ -27,7 +27,7 @@
 %    You should have received a copy of the GNU General Public License
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-function rhs = op_f_v_tp2 (space, msh, coeff)
+function rhs = op_f_v_tp2 (space, msh, coeff, space_f)
 
   for icomp = 1:space.ncomp_param
     for idim = 1:msh.ndim
@@ -43,8 +43,14 @@ function rhs = op_f_v_tp2 (space, msh, coeff)
   for iel = 1:msh.nel_dir(1)
     msh_col = msh_evaluate_col (msh, iel);
     sp_col  = sp_evaluate_col (space, msh_col, 'value', true, 'gradient', true);
-
-    rhs = rhs + op_f_v (sp_col, msh_col, coeff(sp_col, msh_col));
+    
+    
+    if (nargin == 4)
+      sp_f_col  = sp_evaluate_col (space_f, msh_col, 'value', true);
+      rhs = rhs + op_f_v (sp_col, msh_col, coeff(sp_f_col, msh_col));
+    else
+      rhs = rhs + op_f_v (sp_col, msh_col, coeff(sp_col, msh_col));
+    end
   end
 
 end
