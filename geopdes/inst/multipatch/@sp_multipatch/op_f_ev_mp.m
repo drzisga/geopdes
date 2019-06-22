@@ -42,8 +42,13 @@ function rhs = op_f_ev_mp (space, msh, u, f, patch_list)
   rhs = zeros (space.ndof, 1);
   for iptc = patch_list
     
-    u_loc = u(space.gnum{iptc});
-    f_ = @(space,msh) f(u_loc, space, msh);
+    if (isempty (space.dofs_ornt))
+      u_ptc = u(space.gnum{iptc});
+    else
+      u_ptc = u(space.gnum{iptc}) .* space.dofs_ornt{iptc}.';
+    end
+    
+    f_ = @(space,msh) f(u_ptc, space, msh);
     
     rhs_loc = op_f_ev_tp (space.sp_patch{iptc}, msh.msh_patch{iptc}, f_);
     
