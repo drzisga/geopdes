@@ -49,7 +49,11 @@ function [A, surrogate_opts] = op_nonlinear_su_ev_surrogate_2d_mp (spu, msh, Str
       u_ptc = u_old(spu.gnum{iptc}) .* spu.dofs_ornt{iptc}.';
     end
     
-    [rs, cs, vs, surrogate_opts] = op_nonlinear_su_ev_surrogate_2d (spu.sp_patch{iptc}, msh.msh_patch{iptc}, Stress, DStress, u_ptc, surrogate_opts);
+    if surrogate_opts(iptc).enabled    
+      [rs, cs, vs, surrogate_opts(iptc)] = op_nonlinear_su_ev_surrogate_2d (spu.sp_patch{iptc}, msh.msh_patch{iptc}, Stress, DStress, u_ptc, surrogate_opts(iptc));
+    else
+      [rs, cs, vs] = op_nonlinear_su_ev_tp (spu.sp_patch{iptc}, msh.msh_patch{iptc}, Stress, DStress, u_ptc);
+    end
     rows(ncounter+(1:numel (rs))) = spu.gnum{iptc}(rs);
     cols(ncounter+(1:numel (rs))) = spu.gnum{iptc}(cs);
     vals(ncounter+(1:numel (rs))) = vs;
