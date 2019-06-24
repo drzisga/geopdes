@@ -30,9 +30,9 @@
 %    You should have received a copy of the GNU General Public License
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-function A = op_nonlinear_su_ev_surrogate_2d_mp (spu, msh, Stress, DStress, u_old, M, q, patch_list)
+function [A, surrogate_opts] = op_nonlinear_su_ev_surrogate_2d_mp (spu, msh, Stress, DStress, u_old, surrogate_opts, patch_list)
 
-  if (nargin < 8)
+  if (nargin < 7)
     patch_list = 1:msh.npatch;
   end
 
@@ -43,9 +43,13 @@ function A = op_nonlinear_su_ev_surrogate_2d_mp (spu, msh, Stress, DStress, u_ol
   ncounter = 0;
   for iptc = patch_list
 
-    u_loc = u_old(spu.gnum{iptc});
+    if (isempty (spu.dofs_ornt))
+      u_ptc = u_old(spu.gnum{iptc});
+    else
+      u_ptc = u_old(spu.gnum{iptc}) .* spu.dofs_ornt{iptc}.';
+    end
     
-    [rs, cs, vs] = op_nonlinear_su_ev_surrogate_2d (spu.sp_patch{iptc}, msh.msh_patch{iptc}, Stress, DStress, u_loc, M, q);
+    [rs, cs, vs, surrogate_opts] = op_nonlinear_su_ev_surrogate_2d (spu.sp_patch{iptc}, msh.msh_patch{iptc}, Stress, DStress, u_ptc, surrogate_opts);
     rows(ncounter+(1:numel (rs))) = spu.gnum{iptc}(rs);
     cols(ncounter+(1:numel (rs))) = spu.gnum{iptc}(cs);
     vals(ncounter+(1:numel (rs))) = vs;

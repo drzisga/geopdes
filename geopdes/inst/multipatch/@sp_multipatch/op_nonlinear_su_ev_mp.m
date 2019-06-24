@@ -43,9 +43,13 @@ function A = op_nonlinear_su_ev_mp (spu, msh, Stress, DStress, u_old, patch_list
   ncounter = 0;
   for iptc = patch_list
     
-    u_loc = u_old(spu.gnum{iptc});
+    if (isempty (spu.dofs_ornt))
+      u_ptc = u_old(spu.gnum{iptc});
+    else
+      u_ptc = u_old(spu.gnum{iptc}) .* spu.dofs_ornt{iptc}.';
+    end
     
-    [rs, cs, vs] = op_nonlinear_su_ev_tp (spu.sp_patch{iptc}, msh.msh_patch{iptc}, Stress, DStress, u_loc);
+    [rs, cs, vs] = op_nonlinear_su_ev_tp (spu.sp_patch{iptc}, msh.msh_patch{iptc}, Stress, DStress, u_ptc);
     rows(ncounter+(1:numel (rs))) = spu.gnum{iptc}(rs);
     cols(ncounter+(1:numel (rs))) = spu.gnum{iptc}(cs);
     vals(ncounter+(1:numel (rs))) = vs;
