@@ -35,7 +35,7 @@
 %    You should have received a copy of the GNU General Public License
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-function varargout = op_nonlinear_su_ev_surrogate_2d (space, msh, Stress, DStress, u_old, M, q)
+function varargout = op_nonlinear_su_ev_surrogate_2d (space, msh, Stress, DStress, u_old, M, q, preSurrogate)
 
   for icomp = 1:space.ncomp_param
     for idim = 1:msh.ndim
@@ -106,6 +106,12 @@ function varargout = op_nonlinear_su_ev_surrogate_2d (space, msh, Stress, DStres
     K_surr = K_surr + op_nonlinear_su_ev (sp_col, sp_col, msh_col, Stress, DStress, u_old);
   end
   
+  deltas1D = -iga_degree:iga_degree;
+  
+  if (nargout == 2)
+    surrogateSF = cell(space.ncomp_param, space.ncomp_param, length(deltas1D), length(deltas1D));
+  end
+  
   % Extract sub-blocks
   blocklength = space.scalar_spaces{1}.ndof;
   for I = 1:space.ncomp_param
@@ -117,8 +123,8 @@ function varargout = op_nonlinear_su_ev_surrogate_2d (space, msh, Stress, DStres
       sp_v = [];
 
       % Apply local interpolation surrogate approach
-      for i=-iga_degree:iga_degree
-        for j=-iga_degree:iga_degree
+      for i=deltas1D
+        for j=deltas1D
 
           shift = i + num_1D_basis * j;
 
@@ -128,7 +134,18 @@ function varargout = op_nonlinear_su_ev_surrogate_2d (space, msh, Stress, DStres
           sf_sample = full(stencilfunc(ind, ind));
 
           % Interpolate missing values
-          interpolationSplines = spapi({q+1, q+1}, {x_sample, x_sample}, sf_sample);
+          
+          if (nargin == 8 && ~isempty(preSurrogate))
+            interpolationSplines = preSurrogate(I,J,i+iga_degree+1,j+iga_degree+1);
+            interpolationSplines = interpolationSplines{1};
+          else
+            interpolationSplines = spapi({q+1, q+1}, {x_sample, x_sample}, sf_sample);
+          end
+          
+          if (nargout == 2)
+            surrogateSF{I,J,i+iga_degree+1,j+iga_degree+1} = interpolationSplines;
+          end
+          
           tmp = spval(interpolationSplines, {x, x});
 
           % Add contribution to sparse vectors
@@ -154,6 +171,9 @@ function varargout = op_nonlinear_su_ev_surrogate_2d (space, msh, Stress, DStres
 
   if (nargout == 1)
     varargout{1} = K_surr;
+  elseif (nargout == 2)
+    varargout{1} = K_surr;
+    varargout{2} = surrogateSF;
   elseif (nargout == 3)
     [rows, cols, vals] = find (K_surr);
     varargout{1} = rows;
