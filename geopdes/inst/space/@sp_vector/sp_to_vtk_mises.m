@@ -43,6 +43,10 @@ function sp_to_vtk_mises (u, space, geometry, npts, filename, fieldname, CauchyS
 
   sigma = CauchyStressEval(eu);
   sigma = CalcVonMises(sigma);
+  
+  % Workaround
+  sigma(isnan(sigma)) = 0;
+  sigma(sigma > 1e6) = 0;
 
   msh_to_vtk (F, sigma, filename, fieldname);
 
