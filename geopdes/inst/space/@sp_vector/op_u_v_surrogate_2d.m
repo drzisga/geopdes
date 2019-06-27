@@ -36,7 +36,7 @@
 %    You should have received a copy of the GNU General Public License
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-function varargout = op_u_v_surrogate_2d (space, msh, coeff, M, q)
+function varargout = op_u_v_surrogate_2d (space, msh, coeff, surrogate_opts)
 
   for icomp = 1:space.ncomp_param
     for idim = 1:msh.ndim
@@ -56,9 +56,9 @@ function varargout = op_u_v_surrogate_2d (space, msh, coeff, M, q)
     error('op_u_v_surrogate_2d: Dofs in each dimension must be equal');
   end
 
-  if q == 1
+  if surrogate_opts.degree == 1
     method = 'linear';
-  elseif q == 3
+  elseif surrogate_opts.degree == 3
     method = 'spline';
   else
     error('op_u_v_surrogate_2d: q = %d is not supported', q);
@@ -80,7 +80,7 @@ function varargout = op_u_v_surrogate_2d (space, msh, coeff, M, q)
   % Create sample points
   x = linspace(0, 1, num_1D_basis_inner);
   [X, Y] = meshgrid(x);
-  ind = unique([1:M:num_1D_basis_inner, num_1D_basis_inner]);
+  ind = unique([1:surrogate_opts.skip:num_1D_basis_inner, num_1D_basis_inner]);
   X_sample  = X(ind, ind);
   Y_sample  = Y(ind, ind);
 

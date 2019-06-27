@@ -47,37 +47,23 @@ function varargout = op_general_su_ev (spu, spv, msh, C)
 
   jacdet_weights = msh.jacdet .* msh.quad_weights;
   
-  jacdet_weights_C = C;
-  for i=1:spv.ncomp
-    for j = 1:spv.ncomp
-      for k = 1:spu.ncomp
-        for l = 1:spu.ncomp
-          jacdet_weights_C(:,:,i,j,k,l) = jacdet_weights .* C(:,:,i,j,k,l);
-        end
-      end
-    end
-  end
+  jacdet_weights = reshape(jacdet_weights, 1, 1, 1, 1, msh.nqn, msh.nel);
+  jacdet_weights_C = jacdet_weights .* C;
   
   ncounter = 0;
   for iel = 1:msh.nel
     if (all (msh.jacdet(:, iel)))
       gradu_iel = reshape (gradu(:,:,:,:,iel), spu.ncomp, ndir, msh.nqn, spu.nsh_max);
-      gradv_iel = reshape (gradv(:,:,:,:,iel), spv.ncomp, ndir, msh.nqn, spv.nsh_max);
-
-      jacdet_weights_C_iel = squeeze(jacdet_weights_C(:,iel,:,:,:,:));
-      elementary_values = zeros(spv.nsh_max, spu.nsh_max);
+      gradv_iel = reshape (gradv(:,:,:,:,iel), spv.ncomp, ndir, msh.nqn, spv.nsh_max);      
       
-      for i=1:spv.ncomp
-        for j = 1:spv.ncomp
-          for k = 1:spu.ncomp
-            for l = 1:spu.ncomp
-              for qp=1:msh.nqn
-                elementary_values = elementary_values + jacdet_weights_C_iel(qp,i,j,k,l) * squeeze(gradv_iel(i,j,qp,:)) * squeeze(gradu_iel(k,l,qp,:))';
-              end
-            end
-          end
-        end
-      end
+      jacdet_weights_C_iel = jacdet_weights_C(:,:,:,:,:,iel);
+      
+      gradv_iel = reshape(gradv_iel, spv.ncomp, ndir, 1, 1, msh.nqn, spv.nsh_max, 1);
+      gradu_iel = reshape(gradu_iel, 1, 1, spu.ncomp, ndir, msh.nqn, 1, spu.nsh_max);
+      
+      tmp = gradv_iel .* jacdet_weights_C_iel .* gradu_iel;
+      
+      elementary_values = sum(tmp, [1, 2, 3, 4, 5]);
 
       [rows_loc, cols_loc] = ndgrid (spv.connectivity(:,iel), spu.connectivity(:,iel));
       indices = rows_loc & cols_loc;

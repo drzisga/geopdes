@@ -32,9 +32,9 @@
 %    You should have received a copy of the GNU General Public License
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-function A = op_u_v_surrogate_2d_mp (spu, msh, coeff, M, q, patch_list)
+function A = op_u_v_surrogate_2d_mp (spu, msh, coeff, surrogate_opts, patch_list)
 
-  if (nargin < 6)
+  if (nargin < 5)
     patch_list = 1:msh.npatch;
   end
 
@@ -44,7 +44,7 @@ function A = op_u_v_surrogate_2d_mp (spu, msh, coeff, M, q, patch_list)
   
   ncounter = 0;
   for iptc = patch_list
-    [rs, cs, vs] = op_u_v_surrogate_2d (spu.sp_patch{iptc}, msh.msh_patch{iptc}, coeff, M, q);
+    [rs, cs, vs] = op_u_v_surrogate_2d (spu.sp_patch{iptc}, msh.msh_patch{iptc}, coeff, surrogate_opts(iptc));
     rows(ncounter+(1:numel (rs))) = spu.gnum{iptc}(rs);
     cols(ncounter+(1:numel (rs))) = spu.gnum{iptc}(cs);
 
