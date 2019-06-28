@@ -56,14 +56,6 @@ function varargout = op_u_v_surrogate_2d (space, msh, coeff, surrogate_opts)
     error('op_u_v_surrogate_2d: Dofs in each dimension must be equal');
   end
 
-  if surrogate_opts.degree == 1
-    method = 'linear';
-  elseif surrogate_opts.degree == 3
-    method = 'spline';
-  else
-    error('op_u_v_surrogate_2d: q = %d is not supported', q);
-  end
-
   iga_degree = min(space.scalar_spaces{1}.degree);
   num_1D_basis = space.ndof_dir(1);
   num_1D_basis_inner = num_1D_basis - 4 * iga_degree;
@@ -79,10 +71,8 @@ function varargout = op_u_v_surrogate_2d (space, msh, coeff, surrogate_opts)
 
   % Create sample points
   x = linspace(0, 1, num_1D_basis_inner);
-  [X, Y] = meshgrid(x);
-  ind = unique([1:surrogate_opts.skip:num_1D_basis_inner, num_1D_basis_inner]);
-  X_sample  = X(ind, ind);
-  Y_sample  = Y(ind, ind);
+  ind = unique(round(linspace(1, num_1D_basis_inner, ceil((num_1D_basis_inner-1)/surrogate_opts.skip) + 1)));
+  x_sample = x(ind);
 
   % Take only the necessary rows 
   row_indices_subset = row_indices(ind, ind);
@@ -147,7 +137,8 @@ function varargout = op_u_v_surrogate_2d (space, msh, coeff, surrogate_opts)
         sf_sample = full(stencilfunc(ind, ind));
 
         % Interpolate missing values
-        tmp = interp2(X_sample, Y_sample, sf_sample, X, Y, method);
+        interpolationSplines = spapi({surrogate_opts.degree+1, surrogate_opts.degree+1}, {x_sample, x_sample}, sf_sample);
+        tmp = spval(interpolationSplines, {x, x});
 
         % Add contribution to sparse vectors
         % Add diagonal only once
