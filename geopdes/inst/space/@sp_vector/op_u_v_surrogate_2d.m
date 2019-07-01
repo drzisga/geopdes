@@ -112,6 +112,10 @@ function varargout = op_u_v_surrogate_2d (space, msh, coeff, surrogate_opts)
     K_surr = K_surr + op_u_v(sp_col, sp_col, msh_col, coeffs);
   end
   
+  rows = [];
+  cols = [];
+  vals = [];
+  
   % Extract sub-blocks
   blocklength = space.scalar_spaces{1}.ndof;
   for I = 1:space.ncomp_param
@@ -161,8 +165,14 @@ function varargout = op_u_v_surrogate_2d (space, msh, coeff, surrogate_opts)
     idx_intersect = intersect(idx_interp,idx_surr);
     K_sub(idx_intersect) = 0;
     K_sub = K_sub + K_interp;
-    K_surr(((I-1)*blocklength+1):(I*blocklength), ((I-1)*blocklength+1):(I*blocklength)) = K_sub;
+    
+    [rows_sub, cols_sub, vals_sub] = find (K_sub);
+    rows = [rows, ((I-1)*blocklength) + rows_sub];
+    cols = [cols, ((I-1)*blocklength) + cols_sub];
+    vals = [vals, vals_sub];
   end
+  
+  K_surr = sparse(rows, cols, vals, space.ndof, space.ndof);
 
   if (nargout == 1)
     varargout{1} = K_surr;

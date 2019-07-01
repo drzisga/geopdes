@@ -111,6 +111,10 @@ function varargout = op_general_su_ev_surrogate_2d (space, msh, C, surrogate_opt
     K_surr = K_surr + op_general_su_ev (sp_col, sp_col, msh_col, C(coords{:}));
   end
   
+  rows = [];
+  cols = [];
+  vals = [];
+  
   % Extract sub-blocks
   blocklength = space.scalar_spaces{1}.ndof;
   for I = 1:space.ncomp_param
@@ -118,8 +122,6 @@ function varargout = op_general_su_ev_surrogate_2d (space, msh, C, surrogate_opt
       
       % Copy upper diagonal blocks and tranpose
       if I > J
-         K_surr(((I-1)*blocklength+1):(I*blocklength), ((J-1)*blocklength+1):(J*blocklength)) = ...
-           K_surr(((J-1)*blocklength+1):(J*blocklength), ((I-1)*blocklength+1):(I*blocklength))';
         continue;
       end
       
@@ -177,9 +179,23 @@ function varargout = op_general_su_ev_surrogate_2d (space, msh, C, surrogate_opt
       idx_intersect = intersect(idx_interp,idx_surr);
       K_sub(idx_intersect) = 0;
       K_sub = K_sub + K_interp;
-      K_surr(((I-1)*blocklength+1):(I*blocklength), ((J-1)*blocklength+1):(J*blocklength)) = K_sub;
+      
+      [rows_sub, cols_sub, vals_sub] = find (K_sub);
+      
+      if I < J
+        [~, ~, vals_sub_t] = find (K_sub.');
+        rows = [rows, ((I-1)*blocklength) + rows_sub, ((J-1)*blocklength) + rows_sub];
+        cols = [cols, ((J-1)*blocklength) + cols_sub, ((I-1)*blocklength) + cols_sub];
+        vals = [vals, vals_sub, vals_sub_t];
+      else
+        rows = [rows, ((I-1)*blocklength) + rows_sub];
+        cols = [cols, ((J-1)*blocklength) + cols_sub];
+        vals = [vals, vals_sub];
+      end
     end
   end
+  
+  K_surr = sparse(rows, cols, vals, space.ndof, space.ndof);
   
   % Enforce zero row-sum property
   K_surr(logical(speye(size(K_surr)))) = diag(K_surr) - sum(K_surr, 2);
