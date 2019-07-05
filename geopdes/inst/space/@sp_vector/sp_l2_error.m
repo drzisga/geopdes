@@ -30,7 +30,7 @@
 % along with Octave; see the file COPYING.  If not, see
 % <http://www.gnu.org/licenses/>.
 
-function errl2 = sp_l2_error (space, msh, u, uex)
+function errl2 = sp_l2_error (space, msh, u, uex, varargin)
 
   errl2 = 0;
   
@@ -38,7 +38,7 @@ function errl2 = sp_l2_error (space, msh, u, uex)
     msh_col = msh_evaluate_col (msh, iel);
     sp_col  = sp_evaluate_col (space, msh_col, 'value', true, 'gradient', false);
     
-    errl2 = errl2 + (sp_l2_error (sp_col, msh_col, u, uex)).^2;
+    errl2 = errl2 + (sp_l2_error (sp_col, msh_col, u, uex, varargin{:})).^2;
   end
   
   errl2 = sqrt (errl2);

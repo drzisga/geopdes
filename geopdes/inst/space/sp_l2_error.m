@@ -32,8 +32,8 @@
 % along with Octave; see the file COPYING.  If not, see
 % <http://www.gnu.org/licenses/>.
 
-function [errl2, errl2_elem] = sp_l2_error (sp, msh, u, uex)
-  
+function [errl2, errl2_elem] = sp_l2_error (sp, msh, u, uex, varargin)
+
   valu = sp_eval_msh (u, sp, msh);
   valu = reshape (valu, sp.ncomp, msh.nqn, msh.nel);
 
@@ -43,6 +43,12 @@ function [errl2, errl2_elem] = sp_l2_error (sp, msh, u, uex)
   valex  = reshape (feval (uex, x{:}), sp.ncomp, msh.nqn, msh.nel);
 
   w = msh.quad_weights .* msh.jacdet;
+  
+  if nargin == 5
+    condition = varargin{1};
+    condeval = reshape(feval (condition, x{:}), msh.nqn, msh.nel);
+    w(~condeval) = 0;
+  end
 
   errl2_elem = sum (reshape (sum ((valu - valex).^2, 1), [msh.nqn, msh.nel]) .* w);
 

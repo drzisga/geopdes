@@ -29,7 +29,7 @@
 % along with Octave; see the file COPYING.  If not, see
 % <http://www.gnu.org/licenses/>.
 
-function errl2 = sp_l2_error (space, msh, u, uex)
+function errl2 = sp_l2_error (space, msh, u, uex, varargin)
 
   if (space.npatch ~= msh.npatch)
     error ('The number of patches does not coincide') 
@@ -41,7 +41,7 @@ function errl2 = sp_l2_error (space, msh, u, uex)
     else
       u_ptc = u(space.gnum{iptc}) .* space.dofs_ornt{iptc}.';
     end
-    error_l2(iptc) = sp_l2_error (space.sp_patch{iptc}, msh.msh_patch{iptc}, u_ptc, uex);
+    error_l2(iptc) = sp_l2_error (space.sp_patch{iptc}, msh.msh_patch{iptc}, u_ptc, uex, varargin{:});
   end
   errl2 = sqrt (sum (error_l2 .* error_l2));
 
