@@ -39,8 +39,9 @@ function rhs = op_f_ev_mp (space, msh, u, f, patch_list)
     error ('op_f_v_mp: the number of patches does not coincide')
   end
   
-  rhs = zeros (space.ndof, 1);
-  for iptc = patch_list
+  rhs_cell = cell(length(patch_list), 1);
+  
+  parfor iptc = patch_list
     
     if (isempty (space.dofs_ornt))
       u_ptc = u(space.gnum{iptc});
@@ -50,12 +51,18 @@ function rhs = op_f_ev_mp (space, msh, u, f, patch_list)
     
     f_ = @(space,msh) f(u_ptc, space, msh);
     
-    rhs_loc = op_f_ev_tp (space.sp_patch{iptc}, msh.msh_patch{iptc}, f_);
+    rhs_loc = op_f_ev_tp_vec (space.sp_patch{iptc}, msh.msh_patch{iptc}, f_);
     
     if (~isempty (space.dofs_ornt))
       rhs_loc = space.dofs_ornt{iptc}(:) .* rhs_loc(:);
     end
-    rhs(space.gnum{iptc}) = rhs(space.gnum{iptc}) + rhs_loc;
+    
+    rhs_cell{iptc} = rhs_loc;
   end
+  
+  rhs = zeros (space.ndof, 1);
+  for iptc = patch_list
+    rhs(space.gnum{iptc}) = rhs(space.gnum{iptc}) + rhs_cell{iptc};
+  end  
 
 end

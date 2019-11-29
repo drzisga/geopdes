@@ -36,7 +36,7 @@
 %    You should have received a copy of the GNU General Public License
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-function varargout = op_gradu_gradv_surrogate_2d(space, msh, coeff, M, q)
+function varargout = op_gradu_gradv_surrogate_2d(space, msh, coeff, M, q, geometry)
 
 if msh.ndim ~= 2
   error('op_gradu_gradv_surrogate_2d: This function only supports 2D');
@@ -136,6 +136,14 @@ for i=-iga_degree:iga_degree
         
     % Interpolate missing values
     tmp = interp2(X_sample, Y_sample, sf_sample, X, Y, method);
+    
+    [~, F] = sp_eval(zeros(space.ndof,1), space, geometry, [30, 30]);
+    
+    X_phy = squeeze(F(1,:,:));
+    Y_phy = squeeze(F(2,:,:));
+    
+    surf(X_phy,Y_phy,tmp);
+    pause;
         
     % Add contribution to sparse vectors
     sp_i = [sp_i, row_indices(:).', row_indices(:).' + shift];

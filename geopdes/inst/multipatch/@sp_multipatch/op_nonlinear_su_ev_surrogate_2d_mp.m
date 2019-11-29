@@ -40,27 +40,41 @@ function [A, surrogate_opts] = op_nonlinear_su_ev_surrogate_2d_mp (spu, msh, Str
     error ('op_nonlinear_su_ev_surrogate_2d_mp: the number of patches does not coincide')
   end
   
-  ncounter = 0;
-  for iptc = patch_list
-
+  num_patches = length(patch_list);
+  rows_cell = cell(num_patches, 1);
+  cols_cell = cell(num_patches, 1);
+  vals_cell = cell(num_patches, 1);
+  
+  parfor iptc = patch_list
     if (isempty (spu.dofs_ornt))
       u_ptc = u_old(spu.gnum{iptc});
     else
       u_ptc = u_old(spu.gnum{iptc}) .* spu.dofs_ornt{iptc}.';
     end
     
-    if surrogate_opts(iptc).enabled    
-      [rs, cs, vs, surrogate_opts(iptc)] = op_nonlinear_su_ev_surrogate_2d (spu.sp_patch{iptc}, msh.msh_patch{iptc}, Stress, DStress, u_ptc, surrogate_opts(iptc));
+    if surrogate_opts(iptc).enabled      
+      [rs, cs, vs, surrogate_opts(iptc)] = op_nonlinear_su_ev_surrogate_2d_vec(spu.sp_patch{iptc}, msh.msh_patch{iptc}, Stress, DStress, u_ptc, surrogate_opts(iptc));
     else
-      [rs, cs, vs] = op_nonlinear_su_ev_tp (spu.sp_patch{iptc}, msh.msh_patch{iptc}, Stress, DStress, u_ptc);
+      %[rs, cs, vs] = op_nonlinear_su_ev_tp (spu.sp_patch{iptc}, msh.msh_patch{iptc}, Stress, DStress, u_ptc);
+      error('not yet implemented');
     end
-    rows(ncounter+(1:numel (rs))) = spu.gnum{iptc}(rs);
-    cols(ncounter+(1:numel (rs))) = spu.gnum{iptc}(cs);
-    vals(ncounter+(1:numel (rs))) = vs;
-    ncounter = ncounter + numel (rs);
+    
+    rows_cell{iptc} = spu.gnum{iptc}(rs);
+    cols_cell{iptc} = spu.gnum{iptc}(cs);
+    vals_cell{iptc} = vs;
   end
+  
+  ncounter = 0;
+  for iptc = patch_list
+    nel = numel(rows_cell{iptc});
+    
+    rows(ncounter+(1:nel)) = rows_cell{iptc};
+    cols(ncounter+(1:nel)) = cols_cell{iptc};
+    vals(ncounter+(1:nel)) = vals_cell{iptc};
+    ncounter = ncounter + nel;
+  end  
 
   A = sparse (rows, cols, vals, spu.ndof, spu.ndof);
-  clear rows cols vals rs cs vs
+  clear rows cols vals
 
 end
