@@ -50,7 +50,7 @@ function [errl2, errl2_elem] = sp_l2_error (sp, msh, u, uex, varargin)
     w(~condeval) = 0;
   end
 
-  errl2_elem = sum (reshape (sum ((valu - valex).^2, 1), [msh.nqn, msh.nel]) .* w);
+  errl2_elem = sum (reshape (sum (abs(valu - valex).^2, 1), [msh.nqn, msh.nel]) .* w);
 
   errl2  = sqrt (sum (errl2_elem));
   errl2_elem  = sqrt (errl2_elem);

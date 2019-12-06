@@ -50,7 +50,7 @@ function [errh1, errl2, errh1s, errh1_elem, errl2_elem, errh1s_elem] = sp_h1_err
   w = msh.quad_weights .* msh.jacdet;
 
   [errl2, errl2_elem] = sp_l2_error (sp, msh, u, uex);
-  errh1s_elem = sum (reshape (sum (sum ((grad_valu - grad_valex).^2, 1), 2), [msh.nqn, msh.nel]) .* w);
+  errh1s_elem = sum (reshape (sum (sum (abs(grad_valu - grad_valex).^2, 1), 2), [msh.nqn, msh.nel]) .* w);
   errh1s = sqrt (sum (errh1s_elem));
 
   errh1  = sqrt (errl2^2 + errh1s^2);
