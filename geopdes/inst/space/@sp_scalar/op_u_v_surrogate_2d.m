@@ -46,14 +46,6 @@ if ~all(space.ndof_dir == space.ndof_dir(1))
   error('op_u_v_surrogate_2d: Dofs in each dimension must be equal');
 end
 
-if q == 1
-  method = 'linear';
-elseif q == 3
-  method = 'spline';
-else
-  error('op_u_v_surrogate_2d: q = %d is not supported', q);
-end
-
 iga_degree = min(space.degree);
 num_1D_basis = space.ndof_dir(1);
 num_1D_basis_inner = num_1D_basis - 4 * iga_degree;
@@ -69,10 +61,8 @@ row_indices = row_indices(ind, ind);
 
 % Create sample points
 x = linspace(0, 1, num_1D_basis_inner);
-[X, Y] = meshgrid(x);
-ind = unique([1:M:num_1D_basis_inner, num_1D_basis_inner]);
-X_sample  = X(ind, ind);
-Y_sample  = Y(ind, ind);
+ind = unique(round(linspace(1, num_1D_basis_inner, ceil((num_1D_basis_inner-1)/M) + 1)));
+x_sample = x(ind);
 
 % Take only the necessary rows 
 row_indices_subset = row_indices(ind, ind);
@@ -135,7 +125,8 @@ for i=-iga_degree:iga_degree
     sf_sample = full(stencilfunc(ind, ind));
         
     % Interpolate missing values
-    tmp = interp2(X_sample, Y_sample, sf_sample, X, Y, method);
+    interpolationSplines = spapi({q+1, q+1}, {x_sample, x_sample}, sf_sample);
+    tmp = spval(interpolationSplines, {x, x});
         
     % Add contribution to sparse vectors
     % Add diagonal only once

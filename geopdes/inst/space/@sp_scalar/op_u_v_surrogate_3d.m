@@ -1,8 +1,8 @@
-% OP_GRADU_GRADV_SURROGATE_3D: assemble the stiffness matrix A = [a(i,j)],
-% a(i,j) = (epsilon grad u_j, grad v_i) using the surrogate method.
+% OP_U_V_SURROGATE_3D: assemble the mass matrix M = [m(i,j)], m(i,j) = (mu u_j, v_i), exploiting the tensor product structure
+% using the surrogate method
 %
-%   mat = op_gradu_gradv_surrogate_2d (space, msh, coeff, M, q);
-%   [rows, cols, values] = op_gradu_gradv_surrogate_2d (space, msh, coeff, M, q);
+%   mat = op_u_v_surrogate_3d (space, msh, coeff, M, q);
+%   [rows, cols, values] = op_u_v_surrogate_3d (space, msh, coeff, M, q);
 %
 % INPUT:
 %
@@ -14,7 +14,7 @@
 %
 % OUTPUT:
 %
-%   mat:    assembled surrogate stiffness matrix
+%   mat:    assembled surrogate mass matrix
 %   rows:   row indices of the nonzero entries
 %   cols:   column indices of the nonzero entries
 %   values: values of the nonzero entries
@@ -36,14 +36,14 @@
 %    You should have received a copy of the GNU General Public License
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-function varargout = op_gradu_gradv_surrogate_3d(space, msh, coeff, M, q)
+function varargout = op_u_v_surrogate_3d(space, msh, coeff, M, q)
 
 if msh.ndim ~= 3
-  error('op_gradu_gradv_surrogate_3d: This function only supports 3D');
+  error('op_u_v_surrogate_3d: This function only supports 3D');
 end
 
 if ~all(space.ndof_dir == space.ndof_dir(1))
-  error('op_gradu_gradv_surrogate_3d: Dofs in each dimension must be equal');
+  error('op_u_v_surrogate_3d: Dofs in each dimension must be equal');
 end
 
 iga_degree = min(space.degree);
@@ -90,12 +90,12 @@ K_surr = spalloc(space.ndof, space.ndof, (2*iga_degree + 1)^3*space.ndof);
 for iel = 1:msh.nel_dir(1)
   if ismember(iel, boundary_mask)
     msh_col = msh_evaluate_col (msh, iel);
-    sp_col = sp_evaluate_col(space, msh_col, 'value', false, 'gradient', true);
+    sp_col = sp_evaluate_col(space, msh_col, 'value', true);
     for idim = 1:msh.rdim
       coords{idim} = reshape (msh_col.geo_map(idim,:,:), msh_col.nqn, msh_col.nel);
     end
     coeffs = coeff(coords{:});
-    K_surr = K_surr + op_gradu_gradv(sp_col, sp_col, msh_col, coeffs);
+    K_surr = K_surr + op_u_v(sp_col, sp_col, msh_col, coeffs);
   elseif ismember(iel, element_mask)    
     K_surr = masked_assembly(iel, space, msh, coeff, K_surr, element_mask, element_mask);
     K_surr = masked_assembly(iel, space, msh, coeff, K_surr, boundary_mask, 1:msh.nel_dir(1));
@@ -118,7 +118,7 @@ for i=-iga_degree:iga_degree
       shift = i + num_1D_basis * j + num_1D_basis^2 * k;
             
       % Skip if not upper part in the symmetric case
-      if shift <= 0
+      if shift < 0
         continue;
       end
 
@@ -128,21 +128,24 @@ for i=-iga_degree:iga_degree
       sf_sample = full(stencilfunc(ind, ind, ind));
 
       % Interpolate missing values
+      %tmp = interp3(X_sample, Y_sample, Z_sample, sf_sample, X, Y, Z, method);
       interpolationSplines = spapi({q+1, q+1, q+1}, {x_sample, x_sample, x_sample}, sf_sample);
       tmp = spval(interpolationSplines, {x, x, x});
       
       % Add contribution to sparse vectors
-      sp_i = [sp_i, row_indices(:)', row_indices(:).' + shift];
-      sp_j = [sp_j, row_indices(:).' + shift, row_indices(:).'];
-      sp_v = [sp_v, tmp(:).', tmp(:).'];
+      % Add diagonal only once
+      if shift == 0
+        sp_i = [sp_i, row_indices(:).'];
+        sp_j = [sp_j, row_indices(:).'];
+        sp_v = [sp_v, tmp(:).'];
+      else
+        sp_i = [sp_i, row_indices(:)', row_indices(:).' + shift];
+        sp_j = [sp_j, row_indices(:).' + shift, row_indices(:).'];
+        sp_v = [sp_v, tmp(:).', tmp(:).'];
+      end
     end
   end
 end
-
-% Add dummy diagonal entries for pre-allocation
-sp_i = [sp_i, 1:length(K_surr)];
-sp_j = [sp_j, 1:length(K_surr)];
-sp_v = [sp_v, ones(1,length(K_surr))];
 
 % Combine surrogate matrix and standard matrix
 K_interp = sparse(sp_i, sp_j, sp_v, length(K_surr), length(K_surr));
@@ -151,9 +154,6 @@ idx_surr = find(K_surr);
 idx_intersect = intersect(idx_interp,idx_surr);
 K_surr(idx_intersect) = 0;
 K_surr = K_surr + K_interp;
-
-% Enforce zero row-sum property
-K_surr(logical(speye(size(K_surr)))) = diag(K_surr) - sum(K_surr, 2);
 
 if (nargout == 1)
   varargout{1} = K_surr;
@@ -170,11 +170,11 @@ function K = masked_assembly(iel, space, msh, coeff, K, element_mask_1, element_
   tmp_element_mask{1} = element_mask_1;
   tmp_element_mask{2} = element_mask_2;
   msh_col = msh_evaluate_col(msh, iel, 'element_mask', tmp_element_mask);
-  sp_col = sp_evaluate_col(space, msh_col, 'value', false, 'gradient', true, 'element_mask', tmp_element_mask);
+  sp_col = sp_evaluate_col(space, msh_col, 'value', true, 'gradient', false, 'element_mask', tmp_element_mask);
   for idim = 1:msh.rdim
     coords{idim} = reshape (msh_col.geo_map(idim,:,:), msh_col.nqn, msh_col.nel);
   end
   coeffs = coeff(coords{:});
 
-  K = K + op_gradu_gradv(sp_col, sp_col, msh_col, coeffs);
+  K = K + op_u_v(sp_col, sp_col, msh_col, coeffs);
 end
