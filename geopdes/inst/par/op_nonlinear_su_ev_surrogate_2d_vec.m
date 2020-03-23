@@ -108,9 +108,9 @@ function varargout = op_nonlinear_su_ev_surrogate_2d_vec (space, msh, Stress, DS
   
   deltas1D = -iga_degree:iga_degree;
   
-  if (nargout == 2 || nargout == 4)
-    cur_sf = cell(space.ncomp_param, space.ncomp_param, length(deltas1D), length(deltas1D));
-  end
+%   if (nargout == 2 || nargout == 4)
+%     cur_sf = cell(space.ncomp_param, space.ncomp_param, length(deltas1D), length(deltas1D));
+%   end
   
   % Extract sub-blocks
   blocklength = space.scalar_spaces{1}.ndof;
@@ -135,16 +135,16 @@ function varargout = op_nonlinear_su_ev_surrogate_2d_vec (space, msh, Stress, DS
 
           % Interpolate missing values
           
-          if ~isempty(surrogate_opts.cur_sf)
-            interpolationSplines = surrogate_opts.cur_sf(I,J,i+iga_degree+1,j+iga_degree+1);
-            interpolationSplines = interpolationSplines{1};
-          else
+%           if ~isempty(surrogate_opts.cur_sf)
+%             interpolationSplines = surrogate_opts.cur_sf(I,J,i+iga_degree+1,j+iga_degree+1);
+%             interpolationSplines = interpolationSplines{1};
+%           else
             interpolationSplines = spapi({surrogate_opts.degree+1, surrogate_opts.degree+1}, {x_sample, x_sample}, sf_sample);
-          end
+%           end
           
-          if (nargout == 2 || nargout == 4)
-            cur_sf{I,J,i+iga_degree+1,j+iga_degree+1} = interpolationSplines;
-          end
+%           if (nargout == 2 || nargout == 4)
+%             cur_sf{I,J,i+iga_degree+1,j+iga_degree+1} = interpolationSplines;
+%           end
           
           tmp = spval(interpolationSplines, {x, x});
           
@@ -174,10 +174,10 @@ function varargout = op_nonlinear_su_ev_surrogate_2d_vec (space, msh, Stress, DS
   % Enforce zero row-sum property
   K_surr(logical(speye(size(K_surr)))) = diag(K_surr) - sum(K_surr, 2);
   
-  if (nargout == 2 || nargout == 4)
-    surrogate_opts.cur_sf = cur_sf;
-    surrogate_opts.sf{length(surrogate_opts.sf)+1} = cur_sf;
-  end
+%   if (nargout == 2 || nargout == 4)
+%     surrogate_opts.cur_sf = cur_sf;
+%     surrogate_opts.sf{length(surrogate_opts.sf)+1} = cur_sf;
+%   end
 
   if (nargout == 1)
     varargout{1} = K_surr;
